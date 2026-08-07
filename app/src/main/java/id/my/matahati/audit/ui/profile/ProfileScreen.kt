@@ -112,11 +112,11 @@ fun ProfileScreen(onLogout: () -> Unit) {
                     value = user?.department_name ?: "-"
                 )
                 
-                ProfileInfoRow(
-                    icon = Icons.Default.LocationCity,
-                    label = "Perusahaan",
-                    value = user?.company ?: "-"
-                )
+//                ProfileInfoRow(
+//                    icon = Icons.Default.LocationCity,
+//                    label = "Perusahaan",
+//                    value = user?.company ?: "-"
+//                )
             }
         }
 
