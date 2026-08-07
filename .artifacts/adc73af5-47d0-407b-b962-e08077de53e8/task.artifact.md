@@ -1,0 +1,7 @@
+- [x] Update `DashboardModels.kt` with `total_audit` and `recent_activity`
+- [x] Update `HomeViewModel.kt` to expose new fields in `HomeUiState`
+- [x] Update `AuditHome.kt`
+    - [x] Add `EmptyRecentActivity` composable
+    - [x] Pass `totalAudit` to `SummaryStatsSection`
+    - [x] Update `RecentActivitySection` to handle live data and empty state
+- [x] Verify live data and empty state
