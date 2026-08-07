@@ -139,4 +139,41 @@ interface ApiService {
         @Body request: GenericIdRequest
     ): Response<AuditUpdateResponse>
 
+    // Stock Management
+    @GET("api/stock/categories")
+    suspend fun getStockCategories(): Response<StockCategoryListResponse>
+
+    @POST("api/stock/categories")
+    suspend fun createStockCategory(
+        @Body request: StockCategoryRequest
+    ): Response<StockCategoryResponse>
+
+    @POST("api/stock/categories/{id}")
+    suspend fun updateStockCategory(
+        @Path("id") id: Int,
+        @Body request: StockCategoryRequest
+    ): Response<StockCategoryResponse>
+
+    @POST("api/stock/categories/{id}")
+    suspend fun deleteStockCategory(
+        @Path("id") id: Int,
+        @Body request: StockDeleteRequest
+    ): Response<GenericResponse>
+
+    @POST("api/stock/items")
+    suspend fun createStockItem(
+        @Body request: StockItemRequest
+    ): Response<StockItemResponse>
+
+    @POST("api/stock/items/{id}")
+    suspend fun deleteStockItem(
+        @Path("id") id: Int,
+        @Body request: StockDeleteRequest
+    ): Response<GenericResponse>
+
+    @POST("api/stock/items/reorder")
+    suspend fun reorderStockItems(
+        @Body request: StockReorderRequest
+    ): Response<GenericResponse>
+
 }
