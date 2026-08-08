@@ -176,4 +176,24 @@ interface ApiService {
         @Body request: StockReorderRequest
     ): Response<GenericResponse>
 
+    // Stock Detail Items
+    @GET("api/stock/categories/{categoryId}/items")
+    suspend fun getStockItems(
+        @Path("categoryId") categoryId: Int
+    ): Response<StockCategoryResponse>
+
+    // Stock Department Mapping
+    @GET("api/stock/departments")
+    suspend fun getStockDepartments(): Response<DepartmentListResponse>
+
+    @GET("api/stock/departments/{id}/mapping")
+    suspend fun getStockDepartmentMapping(
+        @Path("id") id: Int
+    ): Response<StockDepartmentMappingResponse>
+
+    @POST("api/stock/departments/mapping")
+    suspend fun saveStockDepartmentMapping(
+        @Body request: SaveStockMappingRequest
+    ): Response<GenericResponse>
+
 }

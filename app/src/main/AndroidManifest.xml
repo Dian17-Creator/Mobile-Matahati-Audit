@@ -70,6 +70,24 @@
             android:label="@string/app_name"
             android:theme="@style/Theme.Karyatra_Audit" />
 
+        <activity
+            android:name=".StockCategoryActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.Karyatra_Audit" />
+
+        <activity
+            android:name=".StockDetailBarangActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.Karyatra_Audit" />
+
+        <activity
+            android:name=".StockDepartemenActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.Karyatra_Audit" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

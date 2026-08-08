@@ -24,6 +24,23 @@ class StockRepository {
         }
     }
 
+    suspend fun getCategory(id: Int): ApiResult<StockCategoryResponse> {
+        return try {
+            val response = api.getStockItems(id)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) ApiResult.Success(body)
+                else ApiResult.Error("Data tidak ditemukan")
+            } else {
+                ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
+            }
+        } catch (e: IOException) {
+            ApiResult.Error("Kesalahan Koneksi: ${e.message ?: "Tidak dapat terhubung ke server"}")
+        } catch (e: Exception) {
+            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage ?: "Silakan coba lagi"}")
+        }
+    }
+
     suspend fun createCategory(request: StockCategoryRequest): ApiResult<StockCategoryResponse> {
         return try {
             val response = api.createStockCategory(request)
@@ -43,7 +60,6 @@ class StockRepository {
 
     suspend fun updateCategory(id: Int, request: StockCategoryRequest): ApiResult<StockCategoryResponse> {
         return try {
-            // Add method spoofing
             val spoofedRequest = request.copy(method = "PUT")
             val response = api.updateStockCategory(id, spoofedRequest)
             if (response.isSuccessful) {
@@ -118,6 +134,58 @@ class StockRepository {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
                 else ApiResult.Error("Gagal mengurutkan barang")
+            } else {
+                ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
+            }
+        } catch (e: IOException) {
+            ApiResult.Error("Kesalahan Koneksi: ${e.message ?: "Tidak dapat terhubung ke server"}")
+        } catch (e: Exception) {
+            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage ?: "Silakan coba lagi"}")
+        }
+    }
+
+    // Mapping Methods
+    suspend fun getDepartments(): ApiResult<DepartmentListResponse> {
+        return try {
+            val response = api.getStockDepartments()
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) ApiResult.Success(body)
+                else ApiResult.Error("Data tidak ditemukan")
+            } else {
+                ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
+            }
+        } catch (e: IOException) {
+            ApiResult.Error("Kesalahan Koneksi: ${e.message ?: "Tidak dapat terhubung ke server"}")
+        } catch (e: Exception) {
+            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage ?: "Silakan coba lagi"}")
+        }
+    }
+
+    suspend fun getDepartmentMapping(id: Int): ApiResult<StockDepartmentMappingResponse> {
+        return try {
+            val response = api.getStockDepartmentMapping(id)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) ApiResult.Success(body)
+                else ApiResult.Error("Data tidak ditemukan")
+            } else {
+                ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
+            }
+        } catch (e: IOException) {
+            ApiResult.Error("Kesalahan Koneksi: ${e.message ?: "Tidak dapat terhubung ke server"}")
+        } catch (e: Exception) {
+            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage ?: "Silakan coba lagi"}")
+        }
+    }
+
+    suspend fun saveMapping(request: SaveStockMappingRequest): ApiResult<GenericResponse> {
+        return try {
+            val response = api.saveStockDepartmentMapping(request)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) ApiResult.Success(body)
+                else ApiResult.Error("Gagal menyimpan pemetaan")
             } else {
                 ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
             }
