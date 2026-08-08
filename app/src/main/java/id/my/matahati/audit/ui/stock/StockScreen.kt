@@ -104,7 +104,7 @@ fun StockScreen(
                         contentPadding = PaddingValues(
                             start = 16.dp,
                             end = 16.dp,
-                            top = 16.dp,
+                            top = 0.dp,
                             bottom = 100.dp
                         ),
                         verticalArrangement = Arrangement.spacedBy(16.dp)

@@ -1,5 +1,6 @@
 package id.my.matahati.audit.ui.profile
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -19,11 +20,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import id.my.matahati.audit.R
 import id.my.matahati.audit.data.SessionManager
 
 @Composable
@@ -54,11 +58,10 @@ fun ProfileScreen(onLogout: () -> Unit) {
                 .background(primaryColor.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = Icons.Default.Person,
+            Image(
+                painter = painterResource(id = R.drawable.ic_profile3),
                 contentDescription = "Avatar",
-                modifier = Modifier.size(80.dp),
-                tint = primaryColor
+                modifier = Modifier.size(60.dp)
             )
         }
 
@@ -95,19 +98,19 @@ fun ProfileScreen(onLogout: () -> Unit) {
                 )
                 
                 ProfileInfoRow(
-                    icon = Icons.Default.Person,
+                    painter = painterResource(id = R.drawable.ic_profile3),
                     label = "Nama Lengkap",
                     value = user?.name ?: "-"
                 )
                 
                 ProfileInfoRow(
-                    icon = Icons.Default.Email,
+                    painter = painterResource(id = R.drawable.ic_mail),
                     label = "Email",
                     value = user?.email ?: "-"
                 )
 
                 ProfileInfoRow(
-                    icon = Icons.Default.Business,
+                    painter = painterResource(id = R.drawable.auditdept),
                     label = "Departemen",
                     value = user?.department_name ?: "-"
                 )
@@ -147,24 +150,30 @@ fun ProfileScreen(onLogout: () -> Unit) {
 }
 
 @Composable
-fun ProfileInfoRow(icon: ImageVector, label: String, value: String) {
+fun ProfileInfoRow(
+    painter: Painter,
+    label: String,
+    value: String
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = icon,
+        Image(
+            painter = painter,
             contentDescription = null,
-            modifier = Modifier.size(20.dp),
-            tint = Color.Gray
+            modifier = Modifier.size(20.dp)
         )
+
         Spacer(modifier = Modifier.width(16.dp))
+
         Column {
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.Gray
             )
+
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyLarge,
