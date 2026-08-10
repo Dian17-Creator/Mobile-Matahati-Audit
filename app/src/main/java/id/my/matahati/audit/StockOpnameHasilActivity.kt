@@ -388,12 +388,45 @@ fun StockOpnameReportDetailDialog(
                         Text(text = "VERIFIKASI", style = MaterialTheme.typography.labelMedium, color = Color.Gray, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(12.dp))
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Card(modifier = Modifier.weight(1.2f).height(140.dp), shape = RoundedCornerShape(12.dp)) {
-                                AsyncImage(model = header.verificationPhoto, contentDescription = "Verification", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                            // Auditor Card
+                            Card(
+                                modifier = Modifier.weight(1f).height(140.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                            ) {
+                                Column(modifier = Modifier.fillMaxSize().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                                    Text("Auditor", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(header.auditorName, textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+                                }
                             }
-                            Card(modifier = Modifier.weight(1f).height(140.dp), shape = RoundedCornerShape(12.dp)) {
+
+                            // Photo Card
+                            Card(
+                                modifier = Modifier.weight(1.2f).height(140.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                            ) {
+                                AsyncImage(
+                                    model = header.verificationPhoto,
+                                    contentDescription = "Verification",
+                                    modifier = Modifier.fillMaxSize().border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+
+                            // Auditee Card
+                            Card(
+                                modifier = Modifier.weight(1f).height(140.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                            ) {
                                 Column(modifier = Modifier.fillMaxSize().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                                     Text("Auditee / PIC", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                    Spacer(modifier = Modifier.height(4.dp))
                                     Text(header.auditeeName ?: "-", textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
                                 }
                             }
