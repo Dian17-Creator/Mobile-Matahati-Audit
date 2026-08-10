@@ -13,6 +13,9 @@ data class DashboardSummaryData(
     @SerializedName("total_kategori") val totalKategori: Int,
     @SerializedName("total_pertanyaan") val totalPertanyaan: Int,
     @SerializedName("total_audit") val totalAudit: Int,
+    @SerializedName("total_kategori_stok") val totalKategoriStok: Int,
+    @SerializedName("total_barang") val totalBarang: Int,
+    @SerializedName("total_stok_opname") val totalStokOpname: Int,
     @SerializedName("recent_activity") val recentActivity: List<RecentActivityData>?
 )
 
