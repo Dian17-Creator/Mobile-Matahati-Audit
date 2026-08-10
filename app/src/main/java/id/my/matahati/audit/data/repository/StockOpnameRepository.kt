@@ -13,9 +13,9 @@ class StockOpnameRepository {
 
     private val api = RetrofitClientLaravel.instance
 
-    suspend fun createStockOpname(departmentId: Int): ApiResult<StockOpnameCreateResponse> {
+    suspend fun createStockOpname(departmentId: Int, auditorId: Int): ApiResult<StockOpnameCreateResponse> {
         return try {
-            val response = api.createStockOpname(StockOpnameCreateRequest(departmentId))
+            val response = api.createStockOpname(StockOpnameCreateRequest(departmentId, auditorId))
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -30,9 +30,9 @@ class StockOpnameRepository {
         }
     }
 
-    suspend fun getStockOpnameDetail(id: Int): ApiResult<StockOpnameDetailResponse> {
+    suspend fun getStockOpnameDetail(id: Int, auditorId: Int): ApiResult<StockOpnameDetailResponse> {
         return try {
-            val response = api.getStockOpnameDetail(id)
+            val response = api.getStockOpnameDetail(id, auditorId)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)
@@ -149,13 +149,14 @@ class StockOpnameRepository {
     }
 
     suspend fun getStockOpnameHistories(
+        auditorId: Int,
         departmentId: Int? = null,
         dateFrom: String? = null,
         dateTo: String? = null,
         page: Int? = null
     ): ApiResult<StockOpnameHistoryResponse> {
         return try {
-            val response = api.getStockOpnameHistories(departmentId, dateFrom, dateTo, page)
+            val response = api.getStockOpnameHistories(auditorId, departmentId, dateFrom, dateTo, page)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) ApiResult.Success(body)

@@ -39,9 +39,9 @@ class StockOpnameViewModel(
 
     private val autosaveJobs = mutableMapOf<Int, Job>()
 
-    fun initialize(auditId: Int) {
+    fun initialize(auditId: Int, auditorId: Int) {
         if (auditId != -1) {
-            fetchDetail(auditId)
+            fetchDetail(auditId, auditorId)
         }
         fetchInitialData()
     }
@@ -67,15 +67,15 @@ class StockOpnameViewModel(
         // Since we don't have getStockOpnames, we rely on the create endpoint.
     }
 
-    fun startOpname() {
+    fun startOpname(auditorId: Int) {
         val deptId = _uiState.value.selectedDepartment?.id ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = opnameRepository.createStockOpname(deptId)) {
+            when (val result = opnameRepository.createStockOpname(deptId, auditorId)) {
                 is ApiResult.Success -> {
                     val id = result.data.data?.id
                     if (id != null) {
-                        fetchDetail(id)
+                        fetchDetail(id, auditorId)
                     } else {
                         _uiState.update { it.copy(isLoading = false, errorMessage = "ID tidak ditemukan") }
                     }
@@ -87,10 +87,10 @@ class StockOpnameViewModel(
         }
     }
 
-    fun fetchDetail(id: Int) {
+    fun fetchDetail(id: Int, auditorId: Int) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = opnameRepository.getStockOpnameDetail(id)) {
+            when (val result = opnameRepository.getStockOpnameDetail(id, auditorId)) {
                 is ApiResult.Success -> {
                     val detail = result.data.data
                     _uiState.update { 
@@ -176,14 +176,14 @@ class StockOpnameViewModel(
         }
     }
 
-    fun uploadPhoto(responseId: Int, photoFile: File, remark: String?) {
+    fun uploadPhoto(responseId: Int, photoFile: File, remark: String?, auditorId: Int) {
         val auditId = _uiState.value.opnameDetail?.header?.id ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isUploading = true) }
             when (val result = opnameRepository.uploadPhoto(responseId, photoFile, remark)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isUploading = false) }
-                    fetchDetail(auditId)
+                    fetchDetail(auditId, auditorId)
                 }
                 is ApiResult.Error -> {
                     _uiState.update { it.copy(isUploading = false, errorMessage = result.message) }
@@ -192,14 +192,14 @@ class StockOpnameViewModel(
         }
     }
 
-    fun updatePhotoRemark(photoId: Int, remark: String?) {
+    fun updatePhotoRemark(photoId: Int, remark: String?, auditorId: Int) {
         val auditId = _uiState.value.opnameDetail?.header?.id ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
             when (val result = opnameRepository.updatePhotoRemark(photoId, remark)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isSaving = false) }
-                    fetchDetail(auditId)
+                    fetchDetail(auditId, auditorId)
                 }
                 is ApiResult.Error -> {
                     _uiState.update { it.copy(isSaving = false, errorMessage = result.message) }
@@ -208,14 +208,14 @@ class StockOpnameViewModel(
         }
     }
 
-    fun deletePhoto(photoId: Int) {
+    fun deletePhoto(photoId: Int, auditorId: Int) {
         val auditId = _uiState.value.opnameDetail?.header?.id ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
             when (val result = opnameRepository.deletePhoto(photoId)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isSaving = false) }
-                    fetchDetail(auditId)
+                    fetchDetail(auditId, auditorId)
                 }
                 is ApiResult.Error -> {
                     _uiState.update { it.copy(isSaving = false, errorMessage = result.message) }
@@ -224,7 +224,7 @@ class StockOpnameViewModel(
         }
     }
 
-    fun submitOpname(auditeeName: String, verificationPhoto: File) {
+    fun submitOpname(auditeeName: String, verificationPhoto: File, auditorId: Int) {
         val auditId = _uiState.value.opnameDetail?.header?.id ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isSubmitting = true, highlightedItemId = null) }
@@ -232,7 +232,7 @@ class StockOpnameViewModel(
                 is ApiResult.Success -> {
                     if (result.data.success) {
                         _uiState.update { it.copy(isSubmitting = false, successMessage = result.data.message) }
-                        fetchDetail(auditId)
+                        fetchDetail(auditId, auditorId)
                     } else {
                         val firstIncomplete = result.data.incompleteItems?.firstOrNull()
                         _uiState.update { 
