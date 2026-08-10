@@ -88,6 +88,19 @@
             android:label="@string/app_name"
             android:theme="@style/Theme.Karyatra_Audit" />
 
+        <activity
+            android:name=".StockOpnameActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.Karyatra_Audit"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".StockOpnameHasilActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.Karyatra_Audit" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

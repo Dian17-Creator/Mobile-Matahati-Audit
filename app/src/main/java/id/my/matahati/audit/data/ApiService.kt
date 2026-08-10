@@ -196,4 +196,54 @@ interface ApiService {
         @Body request: SaveStockMappingRequest
     ): Response<GenericResponse>
 
+    // Stock Opname
+    @POST("api/stock/opname/create")
+    suspend fun createStockOpname(
+        @Body request: StockOpnameCreateRequest
+    ): Response<StockOpnameCreateResponse>
+
+    @GET("api/stock/opname/detail/{id}")
+    suspend fun getStockOpnameDetail(
+        @Path("id") id: Int
+    ): Response<StockOpnameDetailResponse>
+
+    @POST("api/stock/opname/update")
+    suspend fun updateStockOpname(
+        @Body request: StockOpnameUpdateRequest
+    ): Response<StockOpnameUpdateResponse>
+
+    @retrofit2.http.Multipart
+    @POST("api/stock/opname/upload-photo")
+    suspend fun uploadStockOpnamePhoto(
+        @retrofit2.http.Part("response_id") responseId: okhttp3.RequestBody,
+        @retrofit2.http.Part photo: okhttp3.MultipartBody.Part,
+        @retrofit2.http.Part("remark") remark: okhttp3.RequestBody? = null
+    ): Response<StockOpnameUpdateResponse>
+
+    @POST("api/stock/opname/update-photo")
+    suspend fun updateStockOpnamePhoto(
+        @Body request: StockOpnamePhotoUpdateRequest
+    ): Response<StockOpnameUpdateResponse>
+
+    @POST("api/stock/opname/delete-photo")
+    suspend fun deleteStockOpnamePhoto(
+        @Body request: StockOpnamePhotoDeleteRequest
+    ): Response<StockOpnameUpdateResponse>
+
+    @retrofit2.http.Multipart
+    @POST("api/stock/opname/submit")
+    suspend fun submitStockOpname(
+        @retrofit2.http.Part("audit_id") auditId: okhttp3.RequestBody,
+        @retrofit2.http.Part("auditee_name") auditeeName: okhttp3.RequestBody,
+        @retrofit2.http.Part verificationPhoto: okhttp3.MultipartBody.Part
+    ): Response<StockOpnameUpdateResponse>
+
+    @GET("api/stock/opname")
+    suspend fun getStockOpnameHistories(
+        @retrofit2.http.Query("department_id") departmentId: Int?,
+        @retrofit2.http.Query("date_from") dateFrom: String?,
+        @retrofit2.http.Query("date_to") dateTo: String?,
+        @retrofit2.http.Query("page") page: Int?
+    ): Response<StockOpnameHistoryResponse>
+
 }

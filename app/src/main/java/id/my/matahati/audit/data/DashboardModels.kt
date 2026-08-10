@@ -16,7 +16,8 @@ data class DashboardSummaryData(
     @SerializedName("total_kategori_stok") val totalKategoriStok: Int,
     @SerializedName("total_barang") val totalBarang: Int,
     @SerializedName("total_stok_opname") val totalStokOpname: Int,
-    @SerializedName("recent_activity") val recentActivity: List<RecentActivityData>?
+    @SerializedName("recent_activity") val recentActivity: List<RecentActivityData>?,
+    @SerializedName("recent_stock_opname") val recentStockOpname: List<RecentActivityData>?
 )
 
 data class DashboardSummaryResponse(

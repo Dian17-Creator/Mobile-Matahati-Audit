@@ -4,8 +4,10 @@ import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.*
@@ -28,8 +30,11 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import id.my.matahati.audit.AuditProses
 import id.my.matahati.audit.StockCategoryActivity
 import id.my.matahati.audit.StockDepartemenActivity
+import id.my.matahati.audit.StockOpnameActivity
+import id.my.matahati.audit.data.RecentActivityData
 import id.my.matahati.audit.data.viewmodel.StockViewModel
 
 @Composable
@@ -59,6 +64,7 @@ fun StockScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(backgroundColor)
+            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -69,8 +75,6 @@ fun StockScreen(
             color = Color.Gray,
             modifier = Modifier.padding(bottom = 0.dp, start = 10.dp, end = 10.dp)
         )
-
-//        Spacer(modifier = Modifier.height(4.dp))
 
         // Summary Stats Section
         Row(
@@ -100,8 +104,6 @@ fun StockScreen(
             )
         }
 
-//        Spacer(modifier = Modifier.height(4.dp))
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -122,6 +124,172 @@ fun StockScreen(
                     context.startActivity(Intent(context, StockDepartemenActivity::class.java))
                 }
             )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            StockMenuCard(
+                title = "Stok\nOpname",
+                icon = Icons.AutoMirrored.Filled.Assignment,
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    val intent = Intent(context, id.my.matahati.audit.StockOpnameActivity::class.java)
+                    context.startActivity(intent)
+                }
+            )
+            StockMenuCard(
+                title = "Hasil Stok\nOpname",
+                icon = Icons.Default.Assessment,
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    context.startActivity(Intent(context, id.my.matahati.audit.StockOpnameHasilActivity::class.java))
+                }
+            )
+        }
+
+        RecentActivitySection(activities = uiState.recentActivities) { activityId ->
+            context.startActivity(
+                Intent(context, id.my.matahati.audit.StockOpnameActivity::class.java).apply {
+                    putExtra("audit_id", activityId)
+                }
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(12.dp))
+    }
+}
+
+@Composable
+fun RecentActivitySection(activities: List<RecentActivityData>, onActivityClick: (Int) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Aktivitas Terbaru",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = Color.Black
+            )
+            Text(
+                text = "Lihat Semua",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFFB63352),
+                modifier = Modifier.clickable { }
+            )
+        }
+        
+        if (activities.isEmpty()) {
+            EmptyRecentActivity()
+        } else {
+            activities.forEach { activity ->
+                ActivityItem(
+                    title = activity.title, 
+                    subtitle = activity.subtitle, 
+                    status = activity.status, 
+                    statusColor = if (activity.status == "Selesai" || activity.status == "Submitted") Color(0xFF4CAF50) else Color(0xFF2196F3),
+                    onClick = { onActivityClick(activity.id) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun EmptyRecentActivity() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(24.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.Assignment,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = Color.LightGray
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = "Belum ada proses stok opname",
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                color = Color.Black
+            )
+            Text(
+                text = "Proses stok opname yang dibuat akan muncul di sini.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+fun ActivityItem(title: String, subtitle: String, status: String, statusColor: Color, onClick: () -> Unit) {
+    val isFinished = status == "Selesai" || status == "Submitted"
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(statusColor.copy(alpha = 0.05f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (isFinished) Icons.Default.CheckCircle else Icons.Default.History,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    tint = statusColor
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color.Black
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+            }
+            Surface(
+                color = statusColor.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = status,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = statusColor
+                )
+            }
         }
     }
 }
