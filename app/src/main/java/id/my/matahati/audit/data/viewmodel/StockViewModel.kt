@@ -16,6 +16,7 @@ data class StockUiState(
     val totalKategoriStok: String = "0",
     val totalBarang: String = "0",
     val totalStokOpname: String = "0",
+    val recentActivities: List<RecentActivityData> = emptyList(),
     val errorMessage: String? = null
 )
 
@@ -37,7 +38,8 @@ class StockViewModel(
                             isLoading = false,
                             totalKategoriStok = data?.totalKategoriStok?.toString() ?: "0",
                             totalBarang = data?.totalBarang?.toString() ?: "0",
-                            totalStokOpname = data?.totalStokOpname?.toString() ?: "0"
+                            totalStokOpname = data?.totalStokOpname?.toString() ?: "0",
+                            recentActivities = data?.recentStockOpname ?: emptyList()
                         ) 
                     }
                 }
