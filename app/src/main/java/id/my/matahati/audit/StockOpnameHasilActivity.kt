@@ -67,8 +67,15 @@ fun StockOpnameHasilScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
+    val userId = remember { sessionManager.getUser()?.id ?: -1 }
+    
     val primaryColor = Color(0xFFB63352)
     val backColor = Color(0xFFF8F9FB)
+
+    LaunchedEffect(Unit) {
+        viewModel.fetchOpnames(userId)
+    }
 
     Scaffold(
         topBar = {
@@ -122,7 +129,7 @@ fun StockOpnameHasilScreen(
                                 DropdownMenuItem(
                                     text = { Text(dept.name) },
                                     onClick = {
-                                        viewModel.selectDepartment(dept)
+                                        viewModel.selectDepartment(dept, userId)
                                         expanded = false
                                     }
                                 )
@@ -135,13 +142,13 @@ fun StockOpnameHasilScreen(
                             label = "Dari Tanggal",
                             value = uiState.dateFrom,
                             modifier = Modifier.weight(1f),
-                            onDateSelected = { viewModel.updateDates(it, uiState.dateTo) }
+                            onDateSelected = { viewModel.updateDates(it, uiState.dateTo, userId) }
                         )
                         StockDatePickerField(
                             label = "Sampai Tanggal",
                             value = uiState.dateTo,
                             modifier = Modifier.weight(1f),
-                            onDateSelected = { viewModel.updateDates(uiState.dateFrom, it) }
+                            onDateSelected = { viewModel.updateDates(uiState.dateFrom, it, userId) }
                         )
                     }
                 }
@@ -180,7 +187,7 @@ fun StockOpnameHasilScreen(
                     items(uiState.opnames, key = { it.id }) { opname ->
                         StockOpnameDocumentItem(
                             opname = opname,
-                            onClick = { viewModel.fetchOpnameDetail(opname.id) }
+                            onClick = { viewModel.fetchOpnameDetail(opname.id, userId) }
                         )
                     }
                 }

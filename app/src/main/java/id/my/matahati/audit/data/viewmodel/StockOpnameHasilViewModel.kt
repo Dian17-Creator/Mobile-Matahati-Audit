@@ -57,23 +57,23 @@ class StockOpnameHasilViewModel(
         }
     }
 
-    fun selectDepartment(department: DepartmentData) {
+    fun selectDepartment(department: DepartmentData, auditorId: Int) {
         _uiState.update { it.copy(selectedDepartment = department) }
-        fetchOpnames()
+        fetchOpnames(auditorId)
     }
 
-    fun updateDates(from: String, to: String) {
+    fun updateDates(from: String, to: String, auditorId: Int) {
         _uiState.update { it.copy(dateFrom = from, dateTo = to) }
-        fetchOpnames()
+        fetchOpnames(auditorId)
     }
 
-    fun fetchOpnames() {
+    fun fetchOpnames(auditorId: Int) {
         val state = _uiState.value
         val deptId = state.selectedDepartment?.id ?: return
         
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, opnames = emptyList()) }
-            when (val result = opnameRepository.getStockOpnameHistories(deptId, state.dateFrom, state.dateTo)) {
+            when (val result = opnameRepository.getStockOpnameHistories(auditorId, deptId, state.dateFrom, state.dateTo)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isLoading = false, opnames = result.data.data?.items ?: emptyList()) }
                 }
@@ -84,10 +84,10 @@ class StockOpnameHasilViewModel(
         }
     }
 
-    fun fetchOpnameDetail(id: Int) {
+    fun fetchOpnameDetail(id: Int, auditorId: Int) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = opnameRepository.getStockOpnameDetail(id)) {
+            when (val result = opnameRepository.getStockOpnameDetail(id, auditorId)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isLoading = false, selectedOpnameDetail = result.data.data) }
                 }

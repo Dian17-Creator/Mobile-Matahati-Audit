@@ -3,7 +3,8 @@ package id.my.matahati.audit.data
 import com.google.gson.annotations.SerializedName
 
 data class StockOpnameCreateRequest(
-    @SerializedName("department_id") val departmentId: Int
+    @SerializedName("department_id") val departmentId: Int,
+    @SerializedName("nid_auditor") val auditorId: Int
 )
 
 data class StockOpnameCreateData(

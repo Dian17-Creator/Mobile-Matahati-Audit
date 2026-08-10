@@ -1,8 +1,11 @@
 package id.my.matahati.audit
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
@@ -50,6 +53,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
@@ -59,6 +63,7 @@ import id.my.matahati.audit.data.viewmodel.StockOpnameViewModel
 import id.my.matahati.audit.ui.theme.matahati_AuditTheme
 import kotlinx.coroutines.launch
 import java.io.File
+import java.io.FileOutputStream
 
 class StockOpnameActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,12 +89,16 @@ fun StockOpnameExecutionScreen(
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
+    val userId = remember { sessionManager.getUser()?.id ?: -1 }
+
     val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        viewModel.initialize(auditId)
+        viewModel.initialize(auditId, userId)
     }
 
     val primaryColor = Color(0xFFB63352)
@@ -113,26 +122,20 @@ fun StockOpnameExecutionScreen(
     LaunchedEffect(uiState.highlightedItemId) {
         uiState.highlightedItemId?.let { id ->
             val categories = uiState.opnameDetail?.categories ?: emptyList()
-            var totalIndex = 0 // Accordion logic might differ, adjust if needed
-            var found = false
             
             var currentIndex = 0
             for (category in categories) {
                 currentIndex++ // Category Header
                 val itemIndex = category.items.indexOfFirst { it.id == id }
                 if (itemIndex != -1) {
-                    totalIndex = currentIndex + itemIndex
-                    found = true
+                    val totalIndex = currentIndex + itemIndex
+                    coroutineScope.launch {
+                        listState.animateScrollToItem(totalIndex)
+                    }
                     break
                 }
                 if (uiState.expandedCategoryIds.contains(category.id)) {
                     currentIndex += category.items.size
-                }
-            }
-            
-            if (found) {
-                coroutineScope.launch {
-                    listState.animateScrollToItem(totalIndex)
                 }
             }
         }
@@ -174,13 +177,14 @@ fun StockOpnameExecutionScreen(
                         selectedDepartment = uiState.selectedDepartment,
                         isLoading = uiState.isLoading,
                         onSelect = { viewModel.selectDepartment(it) },
-                        onStart = { viewModel.startOpname() }
+                        onStart = { viewModel.startOpname(userId) }
                     )
                 } else {
                     OpnameExecutionContent(
                         uiState = uiState,
                         listState = listState,
-                        viewModel = viewModel
+                        viewModel = viewModel,
+                        userId = userId
                     )
                 }
             }
@@ -285,7 +289,8 @@ fun StartOpnameSection(
 fun OpnameExecutionContent(
     uiState: StockOpnameUiState,
     listState: androidx.compose.foundation.lazy.LazyListState,
-    viewModel: StockOpnameViewModel
+    viewModel: StockOpnameViewModel,
+    userId: Int
 ) {
     val container = uiState.opnameDetail ?: return
     val header = container.header
@@ -372,7 +377,7 @@ fun OpnameExecutionContent(
                                     },
                                     onUploadPhoto = { file -> 
                                         opnameItem.response?.id?.let { respId ->
-                                            viewModel.uploadPhoto(respId, file, null)
+                                            viewModel.uploadPhoto(respId, file, null, userId)
                                         }
                                     },
                                     onPhotoClick = { selectedPhoto = it }
@@ -402,7 +407,7 @@ fun OpnameExecutionContent(
             isSubmitting = uiState.isSubmitting,
             onDismiss = { showSubmitDialog = false },
             onSubmit = { name, photo -> 
-                viewModel.submitOpname(name, photo)
+                viewModel.submitOpname(name, photo, userId)
                 showSubmitDialog = false
             }
         )
@@ -414,11 +419,11 @@ fun OpnameExecutionContent(
             isReadOnly = isReadOnly,
             onDismiss = { selectedPhoto = null },
             onSave = { remark -> 
-                viewModel.updatePhotoRemark(photo.id, remark)
+                viewModel.updatePhotoRemark(photo.id, remark, userId)
                 selectedPhoto = null
             },
             onDelete = {
-                viewModel.deletePhoto(photo.id)
+                viewModel.deletePhoto(photo.id, userId)
                 selectedPhoto = null
             }
         )
@@ -484,11 +489,11 @@ fun StockOpnameItemCard(
     }
 
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let { id.my.matahati.audit.uriToFile(context, it)?.let(onUploadPhoto) }
+        uri?.let { uriToFile(context, it)?.let(onUploadPhoto) }
     }
 
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success) { cameraImageUri?.let { id.my.matahati.audit.uriToFile(context, it)?.let(onUploadPhoto) } }
+        if (success) { cameraImageUri?.let { uriToFile(context, it)?.let(onUploadPhoto) } }
     }
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -673,8 +678,8 @@ fun SubmitOpnameDialog(
     var showSourceDialog by remember { mutableStateOf(false) }
     var cameraUri by remember { mutableStateOf<Uri?>(null) }
     
-    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> uri?.let { photoFile = id.my.matahati.audit.uriToFile(context, it) } }
-    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success -> if (success) cameraUri?.let { photoFile = id.my.matahati.audit.uriToFile(context, it) } }
+    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> uri?.let { photoFile = uriToFile(context, it) } }
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success -> if (success) cameraUri?.let { photoFile = uriToFile(context, it) } }
     val cameraPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
         if (isGranted) {
             val file = File(context.cacheDir, "verify_stock_${System.currentTimeMillis()}.jpg")
@@ -740,18 +745,4 @@ fun SubmitOpnameDialog(
     }
 }
 
-@Composable
-fun StockOpnameAnimatedDialog(visible: Boolean, onDismiss: () -> Unit, content: @Composable () -> Unit) {
-    if (visible) {
-        Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)))
-                var isVisible by remember { mutableStateOf(false) }
-                LaunchedEffect(Unit) { isVisible = true }
-                AnimatedVisibility(visible = isVisible, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) {
-                    content()
-                }
-            }
-        }
-    }
-}
+// Remove redundant uriToFile as it exists in AuditProses.kt in the same package

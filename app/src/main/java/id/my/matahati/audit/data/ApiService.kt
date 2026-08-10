@@ -204,7 +204,8 @@ interface ApiService {
 
     @GET("api/stock/opname/detail/{id}")
     suspend fun getStockOpnameDetail(
-        @Path("id") id: Int
+        @Path("id") id: Int,
+        @retrofit2.http.Query("nid_auditor") auditorId: Int
     ): Response<StockOpnameDetailResponse>
 
     @POST("api/stock/opname/update")
@@ -240,6 +241,7 @@ interface ApiService {
 
     @GET("api/stock/opname")
     suspend fun getStockOpnameHistories(
+        @retrofit2.http.Query("nid_auditor") auditorId: Int,
         @retrofit2.http.Query("department_id") departmentId: Int?,
         @retrofit2.http.Query("date_from") dateFrom: String?,
         @retrofit2.http.Query("date_to") dateTo: String?,
