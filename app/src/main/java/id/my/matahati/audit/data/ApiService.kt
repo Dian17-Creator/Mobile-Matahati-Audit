@@ -134,6 +134,12 @@ interface ApiService {
         @retrofit2.http.Query("date_to") dateTo: String?
     ): Response<AuditHistoryResponse>
 
+    @retrofit2.http.Streaming
+    @GET("api/audits/{id}/export-pdf")
+    suspend fun exportAuditPdf(
+        @Path("id") id: Int
+    ): Response<okhttp3.ResponseBody>
+
     @POST("api/audits/delete")
     suspend fun deleteAudit(
         @Body request: GenericIdRequest
@@ -247,5 +253,12 @@ interface ApiService {
         @retrofit2.http.Query("date_to") dateTo: String?,
         @retrofit2.http.Query("page") page: Int?
     ): Response<StockOpnameHistoryResponse>
+
+    @retrofit2.http.Streaming
+    @GET("api/stock/opname/{id}/export-pdf")
+    suspend fun exportStockOpnamePdf(
+        @Path("id") id: Int,
+        @retrofit2.http.Query("nid_auditor") auditorId: Int
+    ): Response<okhttp3.ResponseBody>
 
 }

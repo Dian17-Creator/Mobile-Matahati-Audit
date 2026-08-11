@@ -170,4 +170,21 @@ class StockOpnameRepository {
             ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}")
         }
     }
+
+    suspend fun downloadPdf(id: Int, auditorId: Int): ApiResult<okhttp3.ResponseBody> {
+        return try {
+            val response = api.exportStockOpnamePdf(id, auditorId)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) ApiResult.Success(body)
+                else ApiResult.Error("Gagal mengunduh PDF")
+            } else {
+                ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
+            }
+        } catch (e: IOException) {
+            ApiResult.Error("Kesalahan Koneksi: ${e.message}")
+        } catch (e: Exception) {
+            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}")
+        }
+    }
 }
