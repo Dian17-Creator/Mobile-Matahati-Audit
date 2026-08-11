@@ -199,6 +199,7 @@ fun StockOpnameHasilScreen(
     uiState.selectedOpnameDetail?.let { detail ->
         StockOpnameReportDetailDialog(
             detail = detail,
+            userId = userId,
             onDismiss = { viewModel.clearDetail() }
         )
     }
@@ -326,6 +327,7 @@ fun StockDatePickerField(
 @Composable
 fun StockOpnameReportDetailDialog(
     detail: StockOpnameDetailData,
+    userId: Int,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -340,7 +342,7 @@ fun StockOpnameReportDetailDialog(
                     navigationIcon = { IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, null) } },
                     actions = {
                         IconButton(onClick = {
-                            val url = "https://audit-api.matahaticafe.com/api/stock/opname/${header.id}/export-pdf"
+                            val url = "https://audit-api.matahaticafe.com/api/stock/opname/${header.id}/export-pdf?nid_auditor=${userId}"
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                             context.startActivity(intent)
                         }) {
