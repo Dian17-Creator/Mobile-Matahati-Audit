@@ -122,22 +122,23 @@ class StockOpnameViewModel(
     fun onItemChanged(itemId: Int, qtyStock: String?, qtyReal: String?, notes: String?) {
         val currentDetail = _uiState.value.opnameDetail ?: return
         
-        // Update local state immediately
+        // Update local state immediately with Double conversion for quantities
         val updatedCategories = currentDetail.categories.map { category ->
             category.copy(items = category.items.map { item ->
                 if (item.id == itemId) {
                     item.copy(
                         response = item.response?.copy(
-                            qtyStock = qtyStock,
-                            qtyReal = qtyReal,
+                            qtyStock = qtyStock?.toDoubleOrNull(),
+                            qtyReal = qtyReal?.toDoubleOrNull(),
                             remark = notes
                         ) ?: StockOpnameItemResponse(
                             id = 0,
-                            qtyStock = qtyStock,
-                            qtyReal = qtyReal,
+                            qtyStock = qtyStock?.toDoubleOrNull(),
+                            qtyReal = qtyReal?.toDoubleOrNull(),
                             diff = null,
                             diffUnder = null,
                             diffOver = null,
+                            isNa = false,
                             remark = notes
                         )
                     )

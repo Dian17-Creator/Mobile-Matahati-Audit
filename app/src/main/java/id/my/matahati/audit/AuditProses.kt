@@ -91,7 +91,7 @@ fun AuditExecutionScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
-    val userId = remember { sessionManager.getUser()?.id ?: 1 }
+    val userId = remember { sessionManager.getUser()?.nid ?: -1 }
     
     val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()

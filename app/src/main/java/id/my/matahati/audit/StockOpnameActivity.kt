@@ -91,7 +91,7 @@ fun StockOpnameExecutionScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
-    val userId = remember { sessionManager.getUser()?.id ?: -1 }
+    val userId = remember { sessionManager.getUser()?.nid ?: -1 }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
@@ -475,16 +475,18 @@ fun StockOpnameItemCard(
     val context = LocalContext.current
     val currentResponse = item.response
     
-    var qtyStock by remember(item.id) { mutableStateOf(currentResponse?.qtyStock ?: "") }
-    var qtyReal by remember(item.id) { mutableStateOf(currentResponse?.qtyReal ?: "") }
+    var qtyStock by remember(item.id) { mutableStateOf(currentResponse?.qtyStock?.toString() ?: "") }
+    var qtyReal by remember(item.id) { mutableStateOf(currentResponse?.qtyReal?.toString() ?: "") }
     var notes by remember(item.id) { mutableStateOf(currentResponse?.remark ?: "") }
     
     var showImageSourceDialog by remember { mutableStateOf(false) }
     var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
 
     LaunchedEffect(currentResponse?.qtyStock, currentResponse?.qtyReal, currentResponse?.remark) {
-        if (currentResponse?.qtyStock != qtyStock) qtyStock = currentResponse?.qtyStock ?: ""
-        if (currentResponse?.qtyReal != qtyReal) qtyReal = currentResponse?.qtyReal ?: ""
+        val serverQtyStock = currentResponse?.qtyStock?.toString() ?: ""
+        val serverQtyReal = currentResponse?.qtyReal?.toString() ?: ""
+        if (serverQtyStock != qtyStock) qtyStock = serverQtyStock
+        if (serverQtyReal != qtyReal) qtyReal = serverQtyReal
         if (currentResponse?.remark != notes) notes = currentResponse?.remark ?: ""
     }
 
@@ -572,7 +574,7 @@ fun StockOpnameItemCard(
                 }
 
                 if (currentResponse?.diff != null) {
-                    val diff = currentResponse.diff.toDoubleOrNull() ?: 0.0
+                    val diff = currentResponse.diff ?: 0.0
                     val diffColor = if (diff < 0) Color.Red else if (diff > 0) Color(0xFF4CAF50) else Color.Gray
                     Text(
                         text = "Selisih: ${currentResponse.diff}",

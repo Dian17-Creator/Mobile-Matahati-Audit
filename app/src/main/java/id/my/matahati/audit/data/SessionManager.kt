@@ -25,7 +25,7 @@ class SessionManager(context: Context) {
 
     fun saveSession(user: UserData, rememberMe: Boolean) {
         prefs.edit().apply {
-            putInt(KEY_ID, user.id)
+            putInt(KEY_ID, user.nid)
             putString(KEY_NAME, user.name)
             putString(KEY_EMAIL, user.email)
             putString(KEY_COMPANY, user.company)
@@ -62,7 +62,7 @@ class SessionManager(context: Context) {
         val deptId = prefs.getInt(KEY_DEPT_ID, -1)
 
         return UserData(
-            id = prefs.getInt(KEY_ID, -1),
+            nid = prefs.getInt(KEY_ID, -1),
             name = prefs.getString(KEY_NAME, "") ?: "",
             email = prefs.getString(KEY_EMAIL, "") ?: "",
             company = prefs.getString(KEY_COMPANY, ""),

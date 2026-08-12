@@ -68,7 +68,7 @@ fun StockOpnameHasilScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
-    val userId = remember { sessionManager.getUser()?.id ?: -1 }
+    val userId = remember { sessionManager.getUser()?.nid ?: -1 }
     
     val primaryColor = Color(0xFFB63352)
     val backColor = Color(0xFFF8F9FB)
@@ -342,7 +342,7 @@ fun StockOpnameReportDetailDialog(
                     navigationIcon = { IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, null) } },
                     actions = {
                         IconButton(onClick = {
-                            val url = "https://audit-api.matahaticafe.com/api/stock/opname/${header.id}/export-pdf?nid_auditor=${userId}"
+                            val url = "https://audit-api.matahaticafe.com/api/stock/opname/${header.id}/export-pdf?auditor_id=${userId}"
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                             context.startActivity(intent)
                         }) {
@@ -468,16 +468,16 @@ fun ResultOpnameItemCard(item: StockOpnameItem, index: Int) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Recorded", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                    Text(resp?.qtyStock ?: "0", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                    Text(resp?.qtyStock?.toString() ?: "0", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Actual", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                    Text(resp?.qtyReal ?: "0", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                    Text(resp?.qtyReal?.toString() ?: "0", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Selisih", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                    val diff = resp?.diff?.toDoubleOrNull() ?: 0.0
-                    Text(resp?.diff ?: "0", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = if (diff < 0) Color.Red else if (diff > 0) Color(0xFF4CAF50) else Color.Gray)
+                    val diff = resp?.diff ?: 0.0
+                    Text(resp?.diff?.toString() ?: "0", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = if (diff < 0) Color.Red else if (diff > 0) Color(0xFF4CAF50) else Color.Gray)
                 }
             }
 
