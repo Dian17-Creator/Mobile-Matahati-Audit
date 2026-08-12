@@ -211,7 +211,7 @@ interface ApiService {
     @GET("api/stock/opname/detail/{id}")
     suspend fun getStockOpnameDetail(
         @Path("id") id: Int,
-        @retrofit2.http.Query("nid_auditor") auditorId: Int
+        @retrofit2.http.Query("auditor_id") auditorId: Int
     ): Response<StockOpnameDetailResponse>
 
     @POST("api/stock/opname/update")
@@ -247,7 +247,7 @@ interface ApiService {
 
     @GET("api/stock/opname")
     suspend fun getStockOpnameHistories(
-        @retrofit2.http.Query("nid_auditor") auditorId: Int,
+        @retrofit2.http.Query("auditor_id") auditorId: Int,
         @retrofit2.http.Query("department_id") departmentId: Int?,
         @retrofit2.http.Query("date_from") dateFrom: String?,
         @retrofit2.http.Query("date_to") dateTo: String?,
@@ -258,7 +258,7 @@ interface ApiService {
     @GET("api/stock/opname/{id}/export-pdf")
     suspend fun exportStockOpnamePdf(
         @Path("id") id: Int,
-        @retrofit2.http.Query("nid_auditor") auditorId: Int
+        @retrofit2.http.Query("auditor_id") auditorId: Int
     ): Response<okhttp3.ResponseBody>
 
 }

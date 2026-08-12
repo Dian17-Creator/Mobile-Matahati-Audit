@@ -1,7 +1,10 @@
 package id.my.matahati.audit.data
 
+import com.google.gson.annotations.SerializedName
+
 data class UserData(
-    val id: Int,
+    @SerializedName("id")
+    val nid: Int,
     val name: String,
     val email: String,
     val company: String?,
