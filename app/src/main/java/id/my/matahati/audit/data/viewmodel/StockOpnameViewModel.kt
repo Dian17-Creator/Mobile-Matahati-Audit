@@ -32,7 +32,7 @@ data class StockOpnameUiState(
 
 class StockOpnameViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val opnameRepository: StockOpnameRepository = StockOpnameRepository()
+    private val opnameRepository: StockOpnameRepository = StockOpnameRepository(application)
     private val departmentRepository: AuditDepartmentRepository = AuditDepartmentRepository(application)
 
     private val _uiState = MutableStateFlow(StockOpnameUiState())
@@ -92,20 +92,37 @@ class StockOpnameViewModel(application: Application) : AndroidViewModel(applicat
 
     fun fetchDetail(id: Int, auditorId: Int) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            when (val result = opnameRepository.getStockOpnameDetail(id, auditorId)) {
-                is ApiResult.Success -> {
-                    val detail = result.data.data
-                    _uiState.update { 
+            // Instant load
+            if (_uiState.value.opnameDetail == null) {
+                opnameRepository.getCachedDetail(id)?.data?.let { detail ->
+                    _uiState.update {
                         it.copy(
-                            isLoading = false, 
                             opnameDetail = detail,
-                            expandedCategoryIds = detail?.categories?.map { it.id }?.toSet() ?: emptySet()
-                        ) 
+                            expandedCategoryIds = detail.categories.map { it.id }.toSet()
+                        )
                     }
                 }
-                is ApiResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+            }
+
+            if (_uiState.value.opnameDetail == null) {
+                _uiState.update { it.copy(isLoading = true) }
+            }
+
+            opnameRepository.getStockOpnameDetail(id, auditorId).collect { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        val detail = result.data.data
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                opnameDetail = detail,
+                                expandedCategoryIds = detail?.categories?.map { it.id }?.toSet() ?: emptySet()
+                            )
+                        }
+                    }
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    }
                 }
             }
         }
@@ -184,7 +201,7 @@ class StockOpnameViewModel(application: Application) : AndroidViewModel(applicat
         val auditId = _uiState.value.opnameDetail?.header?.id ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isUploading = true) }
-            when (val result = opnameRepository.uploadPhoto(responseId, photoFile, remark)) {
+            when (val result = opnameRepository.uploadPhoto(auditId, responseId, photoFile, remark)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isUploading = false) }
                     fetchDetail(auditId, auditorId)
@@ -200,7 +217,7 @@ class StockOpnameViewModel(application: Application) : AndroidViewModel(applicat
         val auditId = _uiState.value.opnameDetail?.header?.id ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
-            when (val result = opnameRepository.updatePhotoRemark(photoId, remark)) {
+            when (val result = opnameRepository.updatePhotoRemark(auditId, photoId, remark)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isSaving = false) }
                     fetchDetail(auditId, auditorId)
@@ -216,7 +233,7 @@ class StockOpnameViewModel(application: Application) : AndroidViewModel(applicat
         val auditId = _uiState.value.opnameDetail?.header?.id ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
-            when (val result = opnameRepository.deletePhoto(photoId)) {
+            when (val result = opnameRepository.deletePhoto(auditId, photoId)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isSaving = false) }
                     fetchDetail(auditId, auditorId)

@@ -1,6 +1,7 @@
 package id.my.matahati.audit.data.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import id.my.matahati.audit.data.*
 import id.my.matahati.audit.data.repository.AuditQuestionRepository
@@ -22,22 +23,34 @@ data class AuditQuestionUiState(
     val successMessage: String? = null
 )
 
-class AuditQuestionViewModel(
-    private val repository: AuditQuestionRepository = AuditQuestionRepository()
-) : ViewModel() {
+class AuditQuestionViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val repository: AuditQuestionRepository = AuditQuestionRepository(application)
 
     private val _uiState = MutableStateFlow(AuditQuestionUiState())
     val uiState: StateFlow<AuditQuestionUiState> = _uiState.asStateFlow()
 
     fun fetchQuestions(categoryId: Int) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            when (val result = repository.getQuestions(categoryId)) {
-                is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, questions = result.data.data ?: emptyList()) }
+            // Instant load
+            if (_uiState.value.questions.isEmpty()) {
+                repository.getCachedQuestions(categoryId)?.data?.let { items ->
+                    _uiState.update { it.copy(questions = items) }
                 }
-                is ApiResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+            }
+
+            if (_uiState.value.questions.isEmpty()) {
+                _uiState.update { it.copy(isLoading = true) }
+            }
+            
+            repository.getQuestions(categoryId).collect { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        _uiState.update { it.copy(isLoading = false, questions = result.data.data ?: emptyList()) }
+                    }
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    }
                 }
             }
         }
@@ -110,17 +123,19 @@ class AuditQuestionViewModel(
     fun deleteQuestion(categoryId: Int, id: Int) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = repository.deleteQuestion(id)) {
-                is ApiResult.Success -> {
-                    if (result.data.success) {
-                        _uiState.update { it.copy(isLoading = false, isDeleteDialogOpen = false, successMessage = result.data.message) }
-                        fetchQuestions(categoryId)
-                    } else {
-                        _uiState.update { it.copy(isLoading = false, isDeleteDialogOpen = false, errorMessage = result.data.message) }
+            repository.deleteQuestion(id, categoryId).let { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        if (result.data.success) {
+                            _uiState.update { it.copy(isLoading = false, isDeleteDialogOpen = false, successMessage = result.data.message) }
+                            fetchQuestions(categoryId)
+                        } else {
+                            _uiState.update { it.copy(isLoading = false, isDeleteDialogOpen = false, errorMessage = result.data.message) }
+                        }
                     }
-                }
-                is ApiResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, isDeleteDialogOpen = false, errorMessage = result.message) }
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, isDeleteDialogOpen = false, errorMessage = result.message) }
+                    }
                 }
             }
         }

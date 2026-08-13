@@ -27,7 +27,7 @@ data class AuditHasilUiState(
 
 class AuditHasilViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val executionRepository: AuditExecutionRepository = AuditExecutionRepository()
+    private val executionRepository: AuditExecutionRepository = AuditExecutionRepository(application)
     private val departmentRepository: AuditDepartmentRepository = AuditDepartmentRepository(application)
 
     private val _uiState = MutableStateFlow(AuditHasilUiState())
@@ -74,15 +74,27 @@ class AuditHasilViewModel(application: Application) : AndroidViewModel(applicati
     fun fetchAudits() {
         val state = _uiState.value
         val deptId = state.selectedDepartment?.id ?: return
-        
+
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, audits = emptyList()) }
-            when (val result = executionRepository.getAudits(deptId, state.dateFrom, state.dateTo)) {
-                is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, audits = result.data.data ?: emptyList()) }
+            // Instant load
+            if (_uiState.value.audits.isEmpty()) {
+                executionRepository.getCachedAudits(deptId, state.dateFrom, state.dateTo)?.data?.let { items ->
+                    _uiState.update { it.copy(audits = items) }
                 }
-                is ApiResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+            }
+
+            if (_uiState.value.audits.isEmpty()) {
+                _uiState.update { it.copy(isLoading = true) }
+            }
+            
+            executionRepository.getAudits(deptId, state.dateFrom, state.dateTo).collect { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        _uiState.update { it.copy(isLoading = false, audits = result.data.data ?: emptyList()) }
+                    }
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    }
                 }
             }
         }
@@ -91,12 +103,14 @@ class AuditHasilViewModel(application: Application) : AndroidViewModel(applicati
     fun fetchAuditDetail(auditId: Int) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = executionRepository.getAuditDetail(auditId)) {
-                is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, selectedAuditDetail = result.data.data) }
-                }
-                is ApiResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+            executionRepository.getAuditDetail(auditId).collect { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        _uiState.update { it.copy(isLoading = false, selectedAuditDetail = result.data.data) }
+                    }
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    }
                 }
             }
         }
@@ -111,9 +125,10 @@ class AuditHasilViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun deleteAudit(auditId: Int) {
+        val deptId = _uiState.value.selectedDepartment?.id
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = executionRepository.deleteAudit(auditId)) {
+            when (val result = executionRepository.deleteAudit(auditId, deptId)) {
                 is ApiResult.Success -> {
                     fetchAudits()
                 }

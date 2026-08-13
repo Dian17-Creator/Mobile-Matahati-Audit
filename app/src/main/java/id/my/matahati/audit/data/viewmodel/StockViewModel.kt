@@ -1,6 +1,7 @@
 package id.my.matahati.audit.data.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import id.my.matahati.audit.data.*
 import id.my.matahati.audit.data.repository.DashboardRepository
@@ -20,31 +21,52 @@ data class StockUiState(
     val errorMessage: String? = null
 )
 
-class StockViewModel(
-    private val dashboardRepository: DashboardRepository = DashboardRepository()
-) : ViewModel() {
+class StockViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val dashboardRepository: DashboardRepository = DashboardRepository(application)
 
     private val _uiState = MutableStateFlow(StockUiState())
     val uiState: StateFlow<StockUiState> = _uiState.asStateFlow()
 
+    init {
+        // Instant load from cache
+        dashboardRepository.getCachedSummary()?.data?.let { data ->
+            _uiState.update {
+                it.copy(
+                    totalKategoriStok = data.totalKategoriStok.toString(),
+                    totalBarang = data.totalBarang.toString(),
+                    totalStokOpname = data.totalStokOpname.toString(),
+                    recentActivities = data.recentStockOpname ?: emptyList()
+                )
+            }
+        }
+        fetchDashboardSummary()
+    }
+
     fun fetchDashboardSummary() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            when (val result = dashboardRepository.getDashboardSummary()) {
-                is ApiResult.Success -> {
-                    val data = result.data.data
-                    _uiState.update { 
-                        it.copy(
-                            isLoading = false,
-                            totalKategoriStok = data?.totalKategoriStok?.toString() ?: "0",
-                            totalBarang = data?.totalBarang?.toString() ?: "0",
-                            totalStokOpname = data?.totalStokOpname?.toString() ?: "0",
-                            recentActivities = data?.recentStockOpname ?: emptyList()
-                        ) 
+            // Only show loading if we don't have data yet
+            if (_uiState.value.totalKategoriStok == "0") {
+                _uiState.update { it.copy(isLoading = true) }
+            }
+            
+            dashboardRepository.getDashboardSummary().collect { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        val data = result.data.data
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                totalKategoriStok = data?.totalKategoriStok?.toString() ?: "0",
+                                totalBarang = data?.totalBarang?.toString() ?: "0",
+                                totalStokOpname = data?.totalStokOpname?.toString() ?: "0",
+                                recentActivities = data?.recentStockOpname ?: emptyList()
+                            )
+                        }
                     }
-                }
-                is ApiResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    }
                 }
             }
         }

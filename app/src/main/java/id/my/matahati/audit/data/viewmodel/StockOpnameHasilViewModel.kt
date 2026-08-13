@@ -27,7 +27,7 @@ data class StockOpnameHasilUiState(
 
 class StockOpnameHasilViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val opnameRepository: StockOpnameRepository = StockOpnameRepository()
+    private val opnameRepository: StockOpnameRepository = StockOpnameRepository(application)
     private val departmentRepository: AuditDepartmentRepository = AuditDepartmentRepository(application)
 
     private val _uiState = MutableStateFlow(StockOpnameHasilUiState())
@@ -73,15 +73,27 @@ class StockOpnameHasilViewModel(application: Application) : AndroidViewModel(app
     fun fetchOpnames(auditorId: Int) {
         val state = _uiState.value
         val deptId = state.selectedDepartment?.id ?: return
-        
+
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, opnames = emptyList()) }
-            when (val result = opnameRepository.getStockOpnameHistories(auditorId, deptId, state.dateFrom, state.dateTo)) {
-                is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, opnames = result.data.data?.items ?: emptyList()) }
+            // Instant load
+            if (_uiState.value.opnames.isEmpty()) {
+                opnameRepository.getCachedHistories(auditorId, deptId, state.dateFrom, state.dateTo, null)?.data?.items?.let { items ->
+                    _uiState.update { it.copy(opnames = items) }
                 }
-                is ApiResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+            }
+
+            if (_uiState.value.opnames.isEmpty()) {
+                _uiState.update { it.copy(isLoading = true) }
+            }
+
+            opnameRepository.getStockOpnameHistories(auditorId, deptId, state.dateFrom, state.dateTo).collect { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        _uiState.update { it.copy(isLoading = false, opnames = result.data.data?.items ?: emptyList()) }
+                    }
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    }
                 }
             }
         }
@@ -90,12 +102,14 @@ class StockOpnameHasilViewModel(application: Application) : AndroidViewModel(app
     fun fetchOpnameDetail(id: Int, auditorId: Int) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = opnameRepository.getStockOpnameDetail(id, auditorId)) {
-                is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, selectedOpnameDetail = result.data.data) }
-                }
-                is ApiResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+            opnameRepository.getStockOpnameDetail(id, auditorId).collect { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        _uiState.update { it.copy(isLoading = false, selectedOpnameDetail = result.data.data) }
+                    }
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    }
                 }
             }
         }

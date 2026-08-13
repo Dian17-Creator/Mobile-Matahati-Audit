@@ -1,26 +1,50 @@
 package id.my.matahati.audit.data.repository
 
+import android.content.Context
 import id.my.matahati.audit.data.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import java.io.IOException
 
-class AuditQuestionRepository {
+class AuditQuestionRepository(context: Context) {
 
     private val api = RetrofitClientLaravel.instance
+    private val cache = DataCacheManager(context)
 
-    suspend fun getQuestions(categoryId: Int): ApiResult<QuestionListResponse> {
-        return try {
+    companion object {
+        private const val CACHE_KEY_QUESTIONS_PREFIX = "audit_questions_"
+    }
+
+    fun getQuestions(categoryId: Int): Flow<ApiResult<QuestionListResponse>> = flow {
+        val cacheKey = CACHE_KEY_QUESTIONS_PREFIX + categoryId
+        val cached = getCachedQuestions(categoryId)
+        if (cached != null) {
+            emit(ApiResult.Success(cached))
+        }
+
+        try {
             val response = api.getQuestions(categoryId)
             if (response.isSuccessful) {
                 val body = response.body()
-                if (body != null) ApiResult.Success(body)
-                else ApiResult.Error("Data tidak ditemukan")
-            } else {
-                ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
+                if (body != null) {
+                    if (body != cached) {
+                        cache.save(cacheKey, body)
+                        emit(ApiResult.Success(body))
+                    }
+                } else if (cached == null) {
+                    emit(ApiResult.Error("Data tidak ditemukan"))
+                }
+            } else if (cached == null) {
+                emit(ApiResult.Error(ApiErrorParser.parseError(response.errorBody())))
             }
         } catch (e: IOException) {
-            ApiResult.Error("Kesalahan Koneksi: ${e.message ?: "Tidak dapat terhubung ke server"}. Periksa koneksi internet Anda.")
+            if (cached == null) {
+                emit(ApiResult.Error("Kesalahan Koneksi: ${e.message}"))
+            }
         } catch (e: Exception) {
-            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage ?: "Silakan coba lagi"}")
+            if (cached == null) {
+                emit(ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}"))
+            }
         }
     }
 
@@ -29,15 +53,18 @@ class AuditQuestionRepository {
             val response = api.createQuestion(request)
             if (response.isSuccessful) {
                 val body = response.body()
-                if (body != null) ApiResult.Success(body)
+                if (body != null) {
+                    request.categoryId?.let { invalidateCache(it) }
+                    ApiResult.Success(body)
+                }
                 else ApiResult.Error("Gagal menyimpan data")
             } else {
                 ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
             }
         } catch (e: IOException) {
-            ApiResult.Error("Kesalahan Koneksi: ${e.message ?: "Tidak dapat terhubung ke server"}. Periksa koneksi internet Anda.")
+            ApiResult.Error("Kesalahan Koneksi: ${e.message}")
         } catch (e: Exception) {
-            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage ?: "Silakan coba lagi"}")
+            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}")
         }
     }
 
@@ -46,32 +73,38 @@ class AuditQuestionRepository {
             val response = api.updateQuestion(id, request)
             if (response.isSuccessful) {
                 val body = response.body()
-                if (body != null) ApiResult.Success(body)
+                if (body != null) {
+                    request.categoryId?.let { invalidateCache(it) }
+                    ApiResult.Success(body)
+                }
                 else ApiResult.Error("Gagal memperbarui data")
             } else {
                 ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
             }
         } catch (e: IOException) {
-            ApiResult.Error("Kesalahan Koneksi: ${e.message ?: "Tidak dapat terhubung ke server"}. Periksa koneksi internet Anda.")
+            ApiResult.Error("Kesalahan Koneksi: ${e.message}")
         } catch (e: Exception) {
-            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage ?: "Silakan coba lagi"}")
+            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}")
         }
     }
 
-    suspend fun deleteQuestion(id: Int): ApiResult<QuestionResponse> {
+    suspend fun deleteQuestion(id: Int, categoryId: Int): ApiResult<QuestionResponse> {
         return try {
             val response = api.deleteQuestion(id)
             if (response.isSuccessful) {
                 val body = response.body()
-                if (body != null) ApiResult.Success(body)
+                if (body != null) {
+                    invalidateCache(categoryId)
+                    ApiResult.Success(body)
+                }
                 else ApiResult.Error("Gagal menghapus data")
             } else {
                 ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
             }
         } catch (e: IOException) {
-            ApiResult.Error("Kesalahan Koneksi: ${e.message ?: "Tidak dapat terhubung ke server"}. Periksa koneksi internet Anda.")
+            ApiResult.Error("Kesalahan Koneksi: ${e.message}")
         } catch (e: Exception) {
-            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage ?: "Silakan coba lagi"}")
+            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}")
         }
     }
 
@@ -80,15 +113,26 @@ class AuditQuestionRepository {
             val response = api.reorderQuestions(request)
             if (response.isSuccessful) {
                 val body = response.body()
-                if (body != null) ApiResult.Success(body)
+                if (body != null) {
+                    invalidateCache(request.categoryId)
+                    ApiResult.Success(body)
+                }
                 else ApiResult.Error("Gagal mengatur ulang data")
             } else {
                 ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
             }
         } catch (e: IOException) {
-            ApiResult.Error("Kesalahan Koneksi: ${e.message ?: "Tidak dapat terhubung ke server"}. Periksa koneksi internet Anda.")
+            ApiResult.Error("Kesalahan Koneksi: ${e.message}")
         } catch (e: Exception) {
-            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage ?: "Silakan coba lagi"}")
+            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}")
         }
+    }
+
+    fun invalidateCache(categoryId: Int) {
+        cache.delete(CACHE_KEY_QUESTIONS_PREFIX + categoryId)
+    }
+
+    fun getCachedQuestions(categoryId: Int): QuestionListResponse? {
+        return cache.get(CACHE_KEY_QUESTIONS_PREFIX + categoryId, QuestionListResponse::class.java)
     }
 }

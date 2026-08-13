@@ -1,5 +1,23 @@
-- [x] Create `DataCacheManager.kt`
-- [/] Update `AuditDepartmentRepository.kt` to use caching and return `Flow`
-- [ ] Update `AuditDepartmentViewModel.kt` to handle `Flow`
-- [ ] Verify the implementation
-- [ ] Create walkthrough
+- [x] Implement Caching for Dashboard/Home/Stock
+    - [x] Update `DashboardRepository.kt`
+    - [x] Update `HomeViewModel.kt`
+    - [x] Update `StockViewModel.kt`
+- [x] Implement Caching for Audit Categories
+    - [x] Update `AuditCategoryRepository.kt`
+    - [x] Update `AuditCategoryViewModel.kt`
+- [x] Implement Caching for Audit Questions
+    - [x] Update `AuditQuestionRepository.kt`
+    - [x] Update `AuditQuestionViewModel.kt`
+- [x] Implement Caching for Stock Categories & Items
+    - [x] Update `StockRepository.kt`
+    - [x] Update `StockCategoryViewModel.kt`
+    - [x] Update `StockItemViewModel.kt`
+- [x] Implement Caching for Audit History & Detail
+    - [x] Update `AuditExecutionRepository.kt`
+    - [x] Update `AuditExecutionViewModel.kt`
+    - [x] Update `AuditHasilViewModel.kt`
+- [x] Implement Caching for Stock Opname History & Detail
+    - [x] Update `StockOpnameRepository.kt`
+    - [x] Update `StockOpnameHasilViewModel.kt`
+    - [x] Update `StockOpnameViewModel.kt`
+- [ ] Final Verification & Walkthrough
