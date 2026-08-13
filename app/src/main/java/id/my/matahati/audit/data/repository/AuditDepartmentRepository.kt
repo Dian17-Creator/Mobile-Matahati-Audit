@@ -112,4 +112,12 @@ class AuditDepartmentRepository(context: Context) {
     fun invalidateMappingCache(departmentId: Int) {
         cache.delete(CACHE_KEY_MAPPING_PREFIX + departmentId)
     }
+
+    fun getCachedDepartments(): DepartmentListResponse? {
+        return cache.get(CACHE_KEY_DEPARTMENTS, DepartmentListResponse::class.java)
+    }
+
+    fun getCachedMapping(departmentId: Int): DepartmentMappingResponse? {
+        return cache.get(CACHE_KEY_MAPPING_PREFIX + departmentId, DepartmentMappingResponse::class.java)
+    }
 }

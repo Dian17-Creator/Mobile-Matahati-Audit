@@ -30,12 +30,18 @@ class AuditDepartmentViewModel(application: Application) : AndroidViewModel(appl
     val uiState: StateFlow<AuditDepartmentUiState> = _uiState.asStateFlow()
 
     init {
+        // Instant load from cache
+        repository.getCachedDepartments()?.data?.let { data ->
+            _uiState.update { it.copy(departments = data) }
+        }
         fetchDepartments()
     }
 
     fun fetchDepartments() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            if (_uiState.value.departments.isEmpty()) {
+                _uiState.update { it.copy(isLoading = true) }
+            }
             repository.getDepartments().collect { result ->
                 when (result) {
                     is ApiResult.Success -> {
@@ -56,7 +62,24 @@ class AuditDepartmentViewModel(application: Application) : AndroidViewModel(appl
 
     private fun fetchMapping(departmentId: Int) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            // Instant load
+            repository.getCachedMapping(departmentId)?.data?.let { mappingData ->
+                val categories = mappingData.categories ?: emptyList()
+                val initialSelectedIds = categories.flatMap { it.questions }
+                    .filter { it.linked }
+                    .map { it.id }
+                    .toSet()
+
+                _uiState.update { it.copy(
+                    categories = categories,
+                    selectedQuestionIds = initialSelectedIds
+                ) }
+            }
+
+            if (_uiState.value.categories.isEmpty()) {
+                _uiState.update { it.copy(isLoading = true) }
+            }
+            
             repository.getDepartmentMapping(departmentId).collect { result ->
                 when (result) {
                     is ApiResult.Success -> {

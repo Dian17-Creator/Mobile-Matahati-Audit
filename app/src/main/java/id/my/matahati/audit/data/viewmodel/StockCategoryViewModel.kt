@@ -1,6 +1,7 @@
 package id.my.matahati.audit.data.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import id.my.matahati.audit.data.*
 import id.my.matahati.audit.data.repository.StockRepository
@@ -21,22 +22,34 @@ data class StockCategoryUiState(
     val successMessage: String? = null
 )
 
-class StockCategoryViewModel(
-    private val repository: StockRepository = StockRepository()
-) : ViewModel() {
+class StockCategoryViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val repository: StockRepository = StockRepository(application)
 
     private val _uiState = MutableStateFlow(StockCategoryUiState())
     val uiState: StateFlow<StockCategoryUiState> = _uiState.asStateFlow()
 
+    init {
+        // Instant load
+        repository.getCachedCategories()?.data?.let { data ->
+            _uiState.update { it.copy(categories = data) }
+        }
+        fetchCategories()
+    }
+
     fun fetchCategories() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            when (val result = repository.getCategories()) {
-                is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, categories = result.data.data ?: emptyList()) }
-                }
-                is ApiResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+            if (_uiState.value.categories.isEmpty()) {
+                _uiState.update { it.copy(isLoading = true) }
+            }
+            repository.getCategories().collect { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        _uiState.update { it.copy(isLoading = false, categories = result.data.data ?: emptyList()) }
+                    }
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    }
                 }
             }
         }

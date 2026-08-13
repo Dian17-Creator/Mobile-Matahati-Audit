@@ -1,6 +1,9 @@
 package id.my.matahati.audit.data.repository
 
+import android.content.Context
 import id.my.matahati.audit.data.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -9,16 +12,25 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.io.IOException
 
-class StockOpnameRepository {
+class StockOpnameRepository(context: Context) {
 
     private val api = RetrofitClientLaravel.instance
+    private val cache = DataCacheManager(context)
+
+    companion object {
+        private const val CACHE_KEY_OPNAME_HISTORY_PREFIX = "stock_opname_history_"
+        private const val CACHE_KEY_OPNAME_DETAIL_PREFIX = "stock_opname_detail_"
+    }
 
     suspend fun createStockOpname(departmentId: Int, auditorId: Int): ApiResult<StockOpnameCreateResponse> {
         return try {
             val response = api.createStockOpname(StockOpnameCreateRequest(departmentId, auditorId))
             if (response.isSuccessful) {
                 val body = response.body()
-                if (body != null) ApiResult.Success(body)
+                if (body != null) {
+                    invalidateHistoryCache()
+                    ApiResult.Success(body)
+                }
                 else ApiResult.Error("Gagal membuat stok opname")
             } else {
                 ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
@@ -30,20 +42,36 @@ class StockOpnameRepository {
         }
     }
 
-    suspend fun getStockOpnameDetail(id: Int, auditorId: Int): ApiResult<StockOpnameDetailResponse> {
-        return try {
+    fun getStockOpnameDetail(id: Int, auditorId: Int): Flow<ApiResult<StockOpnameDetailResponse>> = flow {
+        val cacheKey = CACHE_KEY_OPNAME_DETAIL_PREFIX + id
+        val cached = cache.get(cacheKey, StockOpnameDetailResponse::class.java)
+        if (cached != null) {
+            emit(ApiResult.Success(cached))
+        }
+
+        try {
             val response = api.getStockOpnameDetail(id, auditorId)
             if (response.isSuccessful) {
                 val body = response.body()
-                if (body != null) ApiResult.Success(body)
-                else ApiResult.Error("Data stok opname tidak ditemukan")
-            } else {
-                ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
+                if (body != null) {
+                    if (body != cached) {
+                        cache.save(cacheKey, body)
+                        emit(ApiResult.Success(body))
+                    }
+                } else if (cached == null) {
+                    emit(ApiResult.Error("Data stok opname tidak ditemukan"))
+                }
+            } else if (cached == null) {
+                emit(ApiResult.Error(ApiErrorParser.parseError(response.errorBody())))
             }
         } catch (e: IOException) {
-            ApiResult.Error("Kesalahan Koneksi: ${e.message}")
+            if (cached == null) {
+                emit(ApiResult.Error("Kesalahan Koneksi: ${e.message}"))
+            }
         } catch (e: Exception) {
-            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}")
+            if (cached == null) {
+                emit(ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}"))
+            }
         }
     }
 
@@ -52,7 +80,10 @@ class StockOpnameRepository {
             val response = api.updateStockOpname(request)
             if (response.isSuccessful) {
                 val body = response.body()
-                if (body != null) ApiResult.Success(body)
+                if (body != null) {
+                    invalidateDetailCache(request.auditId)
+                    ApiResult.Success(body)
+                }
                 else ApiResult.Error("Gagal memperbarui stok opname")
             } else {
                 ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
@@ -64,7 +95,7 @@ class StockOpnameRepository {
         }
     }
 
-    suspend fun uploadPhoto(responseId: Int, photoFile: File, remark: String?): ApiResult<StockOpnameUpdateResponse> {
+    suspend fun uploadPhoto(auditId: Int, responseId: Int, photoFile: File, remark: String?): ApiResult<StockOpnameUpdateResponse> {
         return try {
             val responseIdBody = responseId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
             val remarkBody = remark?.toRequestBody("text/plain".toMediaTypeOrNull())
@@ -77,7 +108,10 @@ class StockOpnameRepository {
             val response = api.uploadStockOpnamePhoto(responseIdBody, photoPart, remarkBody)
             if (response.isSuccessful) {
                 val body = response.body()
-                if (body != null) ApiResult.Success(body)
+                if (body != null) {
+                    invalidateDetailCache(auditId)
+                    ApiResult.Success(body)
+                }
                 else ApiResult.Error("Gagal mengunggah foto")
             } else {
                 ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
@@ -89,12 +123,15 @@ class StockOpnameRepository {
         }
     }
 
-    suspend fun updatePhotoRemark(photoId: Int, remark: String?): ApiResult<StockOpnameUpdateResponse> {
+    suspend fun updatePhotoRemark(auditId: Int, photoId: Int, remark: String?): ApiResult<StockOpnameUpdateResponse> {
         return try {
             val response = api.updateStockOpnamePhoto(StockOpnamePhotoUpdateRequest(photoId, remark))
             if (response.isSuccessful) {
                 val body = response.body()
-                if (body != null) ApiResult.Success(body)
+                if (body != null) {
+                    invalidateDetailCache(auditId)
+                    ApiResult.Success(body)
+                }
                 else ApiResult.Error("Gagal memperbarui keterangan foto")
             } else {
                 ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
@@ -106,12 +143,15 @@ class StockOpnameRepository {
         }
     }
 
-    suspend fun deletePhoto(photoId: Int): ApiResult<StockOpnameUpdateResponse> {
+    suspend fun deletePhoto(auditId: Int, photoId: Int): ApiResult<StockOpnameUpdateResponse> {
         return try {
             val response = api.deleteStockOpnamePhoto(StockOpnamePhotoDeleteRequest(photoId))
             if (response.isSuccessful) {
                 val body = response.body()
-                if (body != null) ApiResult.Success(body)
+                if (body != null) {
+                    invalidateDetailCache(auditId)
+                    ApiResult.Success(body)
+                }
                 else ApiResult.Error("Gagal menghapus foto")
             } else {
                 ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
@@ -136,7 +176,11 @@ class StockOpnameRepository {
             val response = api.submitStockOpname(auditIdBody, auditeeNameBody, photoPart)
             if (response.isSuccessful) {
                 val body = response.body()
-                if (body != null) ApiResult.Success(body)
+                if (body != null) {
+                    invalidateDetailCache(auditId)
+                    invalidateHistoryCache()
+                    ApiResult.Success(body)
+                }
                 else ApiResult.Error("Gagal mengirim stok opname")
             } else {
                 ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
@@ -148,26 +192,42 @@ class StockOpnameRepository {
         }
     }
 
-    suspend fun getStockOpnameHistories(
+    fun getStockOpnameHistories(
         auditorId: Int,
         departmentId: Int? = null,
         dateFrom: String? = null,
         dateTo: String? = null,
         page: Int? = null
-    ): ApiResult<StockOpnameHistoryResponse> {
-        return try {
+    ): Flow<ApiResult<StockOpnameHistoryResponse>> = flow {
+        val cacheKey = "${CACHE_KEY_OPNAME_HISTORY_PREFIX}${auditorId}_${departmentId}_${dateFrom}_${dateTo}_${page}"
+        val cached = cache.get(cacheKey, StockOpnameHistoryResponse::class.java)
+        if (cached != null) {
+            emit(ApiResult.Success(cached))
+        }
+
+        try {
             val response = api.getStockOpnameHistories(auditorId, departmentId, dateFrom, dateTo, page)
             if (response.isSuccessful) {
                 val body = response.body()
-                if (body != null) ApiResult.Success(body)
-                else ApiResult.Error("Data histori tidak ditemukan")
-            } else {
-                ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
+                if (body != null) {
+                    if (body != cached) {
+                        cache.save(cacheKey, body)
+                        emit(ApiResult.Success(body))
+                    }
+                } else if (cached == null) {
+                    emit(ApiResult.Error("Data histori tidak ditemukan"))
+                }
+            } else if (cached == null) {
+                emit(ApiResult.Error(ApiErrorParser.parseError(response.errorBody())))
             }
         } catch (e: IOException) {
-            ApiResult.Error("Kesalahan Koneksi: ${e.message}")
+            if (cached == null) {
+                emit(ApiResult.Error("Kesalahan Koneksi: ${e.message}"))
+            }
         } catch (e: Exception) {
-            ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}")
+            if (cached == null) {
+                emit(ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}"))
+            }
         }
     }
 
@@ -186,5 +246,28 @@ class StockOpnameRepository {
         } catch (e: Exception) {
             ApiResult.Error("Terjadi kesalahan: ${e.localizedMessage}")
         }
+    }
+
+    private fun invalidateDetailCache(auditId: Int) {
+        cache.delete(CACHE_KEY_OPNAME_DETAIL_PREFIX + auditId)
+    }
+
+    private fun invalidateHistoryCache() {
+        cache.clear()
+    }
+
+    fun getCachedDetail(id: Int): StockOpnameDetailResponse? {
+        return cache.get(CACHE_KEY_OPNAME_DETAIL_PREFIX + id, StockOpnameDetailResponse::class.java)
+    }
+
+    fun getCachedHistories(
+        auditorId: Int,
+        departmentId: Int? = null,
+        dateFrom: String? = null,
+        dateTo: String? = null,
+        page: Int? = null
+    ): StockOpnameHistoryResponse? {
+        val cacheKey = "${CACHE_KEY_OPNAME_HISTORY_PREFIX}${auditorId}_${departmentId}_${dateFrom}_${dateTo}_${page}"
+        return cache.get(cacheKey, StockOpnameHistoryResponse::class.java)
     }
 }

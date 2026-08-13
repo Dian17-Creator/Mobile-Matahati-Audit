@@ -1,6 +1,7 @@
 package id.my.matahati.audit.data.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import id.my.matahati.audit.data.*
 import id.my.matahati.audit.data.repository.StockRepository
@@ -28,26 +29,34 @@ data class ConflictInfo(
     val status: String?
 )
 
-class StockDepartmentViewModel(
-    private val repository: StockRepository = StockRepository()
-) : ViewModel() {
+class StockDepartmentViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val repository: StockRepository = StockRepository(application)
 
     private val _uiState = MutableStateFlow(StockDepartmentUiState())
     val uiState: StateFlow<StockDepartmentUiState> = _uiState.asStateFlow()
 
     init {
+        // Instant load from cache
+        repository.getCachedDepartments()?.data?.let { data ->
+            _uiState.update { it.copy(departments = data) }
+        }
         fetchDepartments()
     }
 
     fun fetchDepartments() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            when (val result = repository.getDepartments()) {
-                is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, departments = result.data.data ?: emptyList()) }
-                }
-                is ApiResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+            if (_uiState.value.departments.isEmpty()) {
+                _uiState.update { it.copy(isLoading = true) }
+            }
+            repository.getDepartments().collect { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        _uiState.update { it.copy(isLoading = false, departments = result.data.data ?: emptyList()) }
+                    }
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    }
                 }
             }
         }
@@ -60,24 +69,43 @@ class StockDepartmentViewModel(
 
     private fun fetchMapping(departmentId: Int) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            when (val result = repository.getDepartmentMapping(departmentId)) {
-                is ApiResult.Success -> {
-                    val mappingData = result.data.data
-                    val categories = mappingData?.categories ?: emptyList()
-                    val initialSelectedIds = categories.flatMap { it.items }
-                        .filter { it.linked }
-                        .map { it.id }
-                        .toSet()
-                    
-                    _uiState.update { it.copy(
-                        isLoading = false, 
-                        categories = categories, 
-                        selectedItemIds = initialSelectedIds 
-                    ) }
-                }
-                is ApiResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+            // Instant load
+            repository.getCachedMapping(departmentId)?.data?.let { mappingData ->
+                val categories = mappingData.categories ?: emptyList()
+                val initialSelectedIds = categories.flatMap { it.items }
+                    .filter { it.linked }
+                    .map { it.id }
+                    .toSet()
+
+                _uiState.update { it.copy(
+                    categories = categories,
+                    selectedItemIds = initialSelectedIds
+                ) }
+            }
+
+            if (_uiState.value.categories.isEmpty()) {
+                _uiState.update { it.copy(isLoading = true) }
+            }
+            
+            repository.getDepartmentMapping(departmentId).collect { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        val mappingData = result.data.data
+                        val categories = mappingData?.categories ?: emptyList()
+                        val initialSelectedIds = categories.flatMap { it.items }
+                            .filter { it.linked }
+                            .map { it.id }
+                            .toSet()
+
+                        _uiState.update { it.copy(
+                            isLoading = false,
+                            categories = categories,
+                            selectedItemIds = initialSelectedIds
+                        ) }
+                    }
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    }
                 }
             }
         }
@@ -130,6 +158,8 @@ class StockDepartmentViewModel(
                 is ApiResult.Success -> {
                     if (result.data.success) {
                         _uiState.update { it.copy(isSaving = false, successMessage = result.data.message) }
+                        // Refresh mapping from API after save
+                        fetchMapping(departmentId)
                     } else {
                         // Handle 409 or other business failures from JSON
                         _uiState.update { it.copy(isSaving = false, errorMessage = result.data.message) }

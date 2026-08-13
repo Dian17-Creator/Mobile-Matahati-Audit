@@ -1,6 +1,7 @@
 package id.my.matahati.audit.data.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import id.my.matahati.audit.data.*
 import id.my.matahati.audit.data.repository.StockRepository
@@ -22,22 +23,34 @@ data class StockItemUiState(
     val successMessage: String? = null
 )
 
-class StockItemViewModel(
-    private val repository: StockRepository = StockRepository()
-) : ViewModel() {
+class StockItemViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val repository: StockRepository = StockRepository(application)
 
     private val _uiState = MutableStateFlow(StockItemUiState())
     val uiState: StateFlow<StockItemUiState> = _uiState.asStateFlow()
 
     fun fetchItems(categoryId: Int) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            when (val result = repository.getCategory(categoryId)) {
-                is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, items = result.data.data?.items ?: emptyList()) }
+            // Instant load
+            if (_uiState.value.items.isEmpty()) {
+                repository.getCachedItems(categoryId)?.data?.items?.let { items ->
+                    _uiState.update { it.copy(items = items) }
                 }
-                is ApiResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+            }
+            
+            if (_uiState.value.items.isEmpty()) {
+                _uiState.update { it.copy(isLoading = true) }
+            }
+            
+            repository.getCategory(categoryId).collect { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        _uiState.update { it.copy(isLoading = false, items = result.data.data?.items ?: emptyList()) }
+                    }
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    }
                 }
             }
         }
@@ -90,7 +103,7 @@ class StockItemViewModel(
     fun deleteItem(categoryId: Int, id: Int) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = repository.deleteItem(id)) {
+            when (val result = repository.deleteItem(categoryId, id)) {
                 is ApiResult.Success -> {
                     if (result.data.success) {
                         _uiState.update { it.copy(isLoading = false, isDeleteDialogOpen = false, successMessage = result.data.message) }

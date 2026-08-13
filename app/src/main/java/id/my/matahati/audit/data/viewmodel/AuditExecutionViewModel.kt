@@ -33,7 +33,7 @@ data class AuditExecutionUiState(
 
 class AuditExecutionViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val executionRepository: AuditExecutionRepository = AuditExecutionRepository()
+    private val executionRepository: AuditExecutionRepository = AuditExecutionRepository(application)
     private val departmentRepository: AuditDepartmentRepository = AuditDepartmentRepository(application)
 
     private val _uiState = MutableStateFlow(AuditExecutionUiState())
@@ -71,18 +71,20 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
             val dateFrom = "2024-01-01"
             val dateTo = "2030-12-31"
             
-            when (val result = executionRepository.getAudits(department.id, dateFrom, dateTo)) {
-                is ApiResult.Success -> {
-                    val audits = result.data.data ?: emptyList()
-                    // Detect both "Draft" and "In Progress" as resumable
-                    val draft = audits.find { 
-                        it.status?.equals("Draft", ignoreCase = true) == true || 
-                        it.status?.equals("In Progress", ignoreCase = true) == true
+            executionRepository.getAudits(department.id, dateFrom, dateTo).collect { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        val audits = result.data.data ?: emptyList()
+                        // Detect both "Draft" and "In Progress" as resumable
+                        val draft = audits.find {
+                            it.status?.equals("Draft", ignoreCase = true) == true ||
+                                    it.status?.equals("In Progress", ignoreCase = true) == true
+                        }
+                        _uiState.update { it.copy(isLoading = false, existingDraftId = draft?.id) }
                     }
-                    _uiState.update { it.copy(isLoading = false, existingDraftId = draft?.id) }
-                }
-                is ApiResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    }
                 }
             }
         }
@@ -117,20 +119,37 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
 
     fun fetchAuditDetail(auditId: Int) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            when (val result = executionRepository.getAuditDetail(auditId)) {
-                is ApiResult.Success -> {
-                    val detail = result.data.data
-                    _uiState.update { 
+            // Instant load
+            if (_uiState.value.auditDetail == null) {
+                executionRepository.getCachedAuditDetail(auditId)?.data?.let { detail ->
+                    _uiState.update {
                         it.copy(
-                            isLoading = false, 
                             auditDetail = detail,
-                            expandedCategoryIds = detail?.categories?.map { it.id }?.toSet() ?: emptySet()
-                        ) 
+                            expandedCategoryIds = detail.categories.map { it.id }.toSet()
+                        )
                     }
                 }
-                is ApiResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+            }
+
+            if (_uiState.value.auditDetail == null) {
+                _uiState.update { it.copy(isLoading = true) }
+            }
+            
+            executionRepository.getAuditDetail(auditId).collect { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        val detail = result.data.data
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                auditDetail = detail,
+                                expandedCategoryIds = detail?.categories?.map { it.id }?.toSet() ?: emptySet()
+                            )
+                        }
+                    }
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    }
                 }
             }
         }
@@ -206,12 +225,13 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun updatePhotoDetail(photoId: Int, observation: String?, recommendation: String?) {
+        val auditId = _uiState.value.auditDetail?.audit?.id ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
-            when (val result = executionRepository.updatePhotoDetail(photoId, observation, recommendation)) {
+            when (val result = executionRepository.updatePhotoDetail(photoId, observation, recommendation, auditId)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isSaving = false) }
-                    _uiState.value.auditDetail?.audit?.id?.let { fetchAuditDetail(it) }
+                    fetchAuditDetail(auditId)
                 }
                 is ApiResult.Error -> {
                     _uiState.update { it.copy(isSaving = false, errorMessage = result.message) }
@@ -221,12 +241,13 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun deletePhoto(photoId: Int) {
+        val auditId = _uiState.value.auditDetail?.audit?.id ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
-            when (val result = executionRepository.deletePhoto(photoId)) {
+            when (val result = executionRepository.deletePhoto(photoId, auditId)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isSaving = false) }
-                    _uiState.value.auditDetail?.audit?.id?.let { fetchAuditDetail(it) }
+                    fetchAuditDetail(auditId)
                 }
                 is ApiResult.Error -> {
                     _uiState.update { it.copy(isSaving = false, errorMessage = result.message) }
