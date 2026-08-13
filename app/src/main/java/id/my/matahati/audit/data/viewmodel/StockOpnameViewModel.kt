@@ -1,6 +1,7 @@
 package id.my.matahati.audit.data.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import id.my.matahati.audit.data.*
 import id.my.matahati.audit.data.repository.AuditDepartmentRepository
@@ -29,10 +30,10 @@ data class StockOpnameUiState(
     val successMessage: String? = null
 )
 
-class StockOpnameViewModel(
-    private val opnameRepository: StockOpnameRepository = StockOpnameRepository(),
-    private val departmentRepository: AuditDepartmentRepository = AuditDepartmentRepository()
-) : ViewModel() {
+class StockOpnameViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val opnameRepository: StockOpnameRepository = StockOpnameRepository()
+    private val departmentRepository: AuditDepartmentRepository = AuditDepartmentRepository(application)
 
     private val _uiState = MutableStateFlow(StockOpnameUiState())
     val uiState: StateFlow<StockOpnameUiState> = _uiState.asStateFlow()
@@ -49,12 +50,14 @@ class StockOpnameViewModel(
     private fun fetchInitialData() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = departmentRepository.getDepartments()) {
-                is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, departments = result.data.data ?: emptyList()) }
-                }
-                is ApiResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+            departmentRepository.getDepartments().collect { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        _uiState.update { it.copy(isLoading = false, departments = result.data.data ?: emptyList()) }
+                    }
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    }
                 }
             }
         }

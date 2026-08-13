@@ -1,6 +1,7 @@
 package id.my.matahati.audit.data.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import id.my.matahati.audit.data.*
 import id.my.matahati.audit.data.repository.AuditDepartmentRepository
@@ -21,9 +22,9 @@ data class AuditDepartmentUiState(
     val successMessage: String? = null
 )
 
-class AuditDepartmentViewModel(
-    private val repository: AuditDepartmentRepository = AuditDepartmentRepository()
-) : ViewModel() {
+class AuditDepartmentViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val repository: AuditDepartmentRepository = AuditDepartmentRepository(application)
 
     private val _uiState = MutableStateFlow(AuditDepartmentUiState())
     val uiState: StateFlow<AuditDepartmentUiState> = _uiState.asStateFlow()
@@ -35,12 +36,14 @@ class AuditDepartmentViewModel(
     fun fetchDepartments() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = repository.getDepartments()) {
-                is ApiResult.Success -> {
-                    _uiState.update { it.copy(isLoading = false, departments = result.data.data ?: emptyList()) }
-                }
-                is ApiResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+            repository.getDepartments().collect { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        _uiState.update { it.copy(isLoading = false, departments = result.data.data ?: emptyList()) }
+                    }
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    }
                 }
             }
         }
@@ -54,23 +57,25 @@ class AuditDepartmentViewModel(
     private fun fetchMapping(departmentId: Int) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = repository.getDepartmentMapping(departmentId)) {
-                is ApiResult.Success -> {
-                    val mappingData = result.data.data
-                    val categories = mappingData?.categories ?: emptyList()
-                    val initialSelectedIds = categories.flatMap { it.questions }
-                        .filter { it.linked }
-                        .map { it.id }
-                        .toSet()
-                    
-                    _uiState.update { it.copy(
-                        isLoading = false, 
-                        categories = categories, 
-                        selectedQuestionIds = initialSelectedIds 
-                    ) }
-                }
-                is ApiResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+            repository.getDepartmentMapping(departmentId).collect { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        val mappingData = result.data.data
+                        val categories = mappingData?.categories ?: emptyList()
+                        val initialSelectedIds = categories.flatMap { it.questions }
+                            .filter { it.linked }
+                            .map { it.id }
+                            .toSet()
+
+                        _uiState.update { it.copy(
+                            isLoading = false,
+                            categories = categories,
+                            selectedQuestionIds = initialSelectedIds
+                        ) }
+                    }
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    }
                 }
             }
         }
@@ -123,6 +128,8 @@ class AuditDepartmentViewModel(
                 is ApiResult.Success -> {
                     if (result.data.success) {
                         _uiState.update { it.copy(isSaving = false, successMessage = result.data.message) }
+                        // Refresh mapping from API after save
+                        fetchMapping(departmentId)
                     } else {
                         _uiState.update { it.copy(isSaving = false, errorMessage = result.data.message) }
                     }

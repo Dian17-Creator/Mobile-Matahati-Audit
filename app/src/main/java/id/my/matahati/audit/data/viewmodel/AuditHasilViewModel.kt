@@ -1,6 +1,7 @@
 package id.my.matahati.audit.data.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import id.my.matahati.audit.data.*
 import id.my.matahati.audit.data.repository.AuditDepartmentRepository
@@ -24,10 +25,10 @@ data class AuditHasilUiState(
     val errorMessage: String? = null
 )
 
-class AuditHasilViewModel(
-    private val executionRepository: AuditExecutionRepository = AuditExecutionRepository(),
-    private val departmentRepository: AuditDepartmentRepository = AuditDepartmentRepository()
-) : ViewModel() {
+class AuditHasilViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val executionRepository: AuditExecutionRepository = AuditExecutionRepository()
+    private val departmentRepository: AuditDepartmentRepository = AuditDepartmentRepository(application)
 
     private val _uiState = MutableStateFlow(AuditHasilUiState())
     val uiState: StateFlow<AuditHasilUiState> = _uiState.asStateFlow()
@@ -46,13 +47,15 @@ class AuditHasilViewModel(
     private fun fetchDepartments() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            when (val result = departmentRepository.getDepartments()) {
-                is ApiResult.Success -> {
-                    val depts = result.data.data ?: emptyList()
-                    _uiState.update { it.copy(isLoading = false, departments = depts) }
-                }
-                is ApiResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+            departmentRepository.getDepartments().collect { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        val depts = result.data.data ?: emptyList()
+                        _uiState.update { it.copy(isLoading = false, departments = depts) }
+                    }
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    }
                 }
             }
         }
