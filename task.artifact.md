@@ -1,0 +1,5 @@
+- [x] Create `DataCacheManager.kt`
+- [/] Update `AuditDepartmentRepository.kt` to use caching and return `Flow`
+- [ ] Update `AuditDepartmentViewModel.kt` to handle `Flow`
+- [ ] Verify the implementation
+- [ ] Create walkthrough
