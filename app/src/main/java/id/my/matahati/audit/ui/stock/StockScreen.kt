@@ -30,20 +30,22 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import id.my.matahati.audit.AuditProses
 import id.my.matahati.audit.StockCategoryActivity
 import id.my.matahati.audit.StockDepartemenActivity
 import id.my.matahati.audit.StockOpnameActivity
 import id.my.matahati.audit.data.RecentActivityData
 import id.my.matahati.audit.data.viewmodel.StockViewModel
+import id.my.matahati.audit.navigation.Screen
 
 @Composable
 fun StockScreen(
+    navController: NavHostController,
     viewModel: StockViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val backgroundColor = Color(0xFFF8F9FB)
-    val primaryColor = Color(0xFFB63352)
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -113,7 +115,9 @@ fun StockScreen(
                 icon = Icons.Default.Inventory2,
                 modifier = Modifier.weight(1f),
                 onClick = {
-                    context.startActivity(Intent(context, StockCategoryActivity::class.java))
+                    if (navController.currentDestination?.route == Screen.Stock.route) {
+                        context.startActivity(Intent(context, StockCategoryActivity::class.java))
+                    }
                 }
             )
             StockMenuCard(
@@ -121,7 +125,9 @@ fun StockScreen(
                 icon = Icons.Default.BusinessCenter,
                 modifier = Modifier.weight(1f),
                 onClick = {
-                    context.startActivity(Intent(context, StockDepartemenActivity::class.java))
+                    if (navController.currentDestination?.route == Screen.Stock.route) {
+                        context.startActivity(Intent(context, StockDepartemenActivity::class.java))
+                    }
                 }
             )
         }
@@ -135,8 +141,10 @@ fun StockScreen(
                 icon = Icons.AutoMirrored.Filled.Assignment,
                 modifier = Modifier.weight(1f),
                 onClick = {
-                    val intent = Intent(context, id.my.matahati.audit.StockOpnameActivity::class.java)
-                    context.startActivity(intent)
+                    if (navController.currentDestination?.route == Screen.Stock.route) {
+                        val intent = Intent(context, id.my.matahati.audit.StockOpnameActivity::class.java)
+                        context.startActivity(intent)
+                    }
                 }
             )
             StockMenuCard(
@@ -144,17 +152,21 @@ fun StockScreen(
                 icon = Icons.Default.Assessment,
                 modifier = Modifier.weight(1f),
                 onClick = {
-                    context.startActivity(Intent(context, id.my.matahati.audit.StockOpnameHasilActivity::class.java))
+                    if (navController.currentDestination?.route == Screen.Stock.route) {
+                        context.startActivity(Intent(context, id.my.matahati.audit.StockOpnameHasilActivity::class.java))
+                    }
                 }
             )
         }
 
         RecentActivitySection(activities = uiState.recentActivities) { activityId ->
-            context.startActivity(
-                Intent(context, id.my.matahati.audit.StockOpnameActivity::class.java).apply {
-                    putExtra("audit_id", activityId)
-                }
-            )
+            if (navController.currentDestination?.route == Screen.Stock.route) {
+                context.startActivity(
+                    Intent(context, id.my.matahati.audit.StockOpnameActivity::class.java).apply {
+                        putExtra("audit_id", activityId)
+                    }
+                )
+            }
         }
         
         Spacer(modifier = Modifier.height(12.dp))
