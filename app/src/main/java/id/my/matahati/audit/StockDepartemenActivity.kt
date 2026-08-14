@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -68,6 +69,12 @@ fun StockDepartemenScreen(
             viewModel.clearMessages()
         }
     }
+
+    // Calculate stats
+    val totalBarang = remember(uiState.categories) {
+        uiState.categories.sumOf { it.items.size }
+    }
+    val totalDipilih = uiState.selectedItemIds.size
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -134,6 +141,17 @@ fun StockDepartemenScreen(
                 StockBulkActionsBar(
                     onSelectAll = { viewModel.toggleAll(true) },
                     onClearAll = { viewModel.toggleAll(false) }
+                )
+
+                // Selection Counter
+                Text(
+                    text = "$totalDipilih dari $totalBarang barang dipilih",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 12.dp, top = 6.dp)
                 )
 
                 LazyColumn(
@@ -239,7 +257,7 @@ fun StockBulkActionsBar(onSelectAll: () -> Unit, onClearAll: () -> Unit) {
             modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Icon(Icons.Default.SelectAll, contentDescription = null, modifier = Modifier.size(14.dp))
+            Icon(painterResource(id = R.drawable.selectall), contentDescription = null, modifier = Modifier.size(14.dp))
             Spacer(modifier = Modifier.width(8.dp))
             Text("Pilih Semua", fontSize = 12.sp)
         }
@@ -248,7 +266,7 @@ fun StockBulkActionsBar(onSelectAll: () -> Unit, onClearAll: () -> Unit) {
             modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Icon(Icons.Default.DeleteSweep, contentDescription = null, modifier = Modifier.size(14.dp))
+            Icon(painterResource(id = R.drawable.trash), contentDescription = null, modifier = Modifier.size(14.dp))
             Spacer(modifier = Modifier.width(8.dp))
             Text("Hapus Semua", fontSize = 12.sp)
         }
