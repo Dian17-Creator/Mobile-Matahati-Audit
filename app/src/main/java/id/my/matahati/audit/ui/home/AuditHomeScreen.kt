@@ -71,8 +71,8 @@ fun AuditHomeScreen(
     val menus = listOf(
         HomeMenu("Kategori &\nPertanyaan", R.drawable.auditquest),
         HomeMenu("Pemetaan\nDepartemen", R.drawable.auditdept),
-        HomeMenu("Audit", R.drawable.audits),
-        HomeMenu("Hasil Audit", R.drawable.auditdone)
+        HomeMenu("Audit", R.drawable.ic_audits),
+        HomeMenu("Hasil Audit", R.drawable.ic_reportaudits)
     )
 
     Column(

@@ -93,8 +93,7 @@
             android:name=".StockOpnameActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.Karyatra_Audit"
-            android:windowSoftInputMode="adjustResize" />
+            android:theme="@style/Theme.Karyatra_Audit" />
 
         <activity
             android:name=".StockOpnameHasilActivity"
