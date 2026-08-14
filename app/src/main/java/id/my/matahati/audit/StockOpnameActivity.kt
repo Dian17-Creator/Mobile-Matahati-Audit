@@ -141,58 +141,56 @@ fun StockOpnameExecutionScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) },
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            text = "Stok Opname",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                        )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = primaryColor,
-                        titleContentColor = Color.White,
-                        navigationIconContentColor = Color.White
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Stok Opname",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = primaryColor,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
                 )
-            },
-            containerColor = backColor
-        ) { innerPadding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            ) {
-                if (uiState.opnameDetail == null) {
-                    StartOpnameSection(
-                        departments = uiState.departments,
-                        selectedDepartment = uiState.selectedDepartment,
-                        isLoading = uiState.isLoading,
-                        onSelect = { viewModel.selectDepartment(it) },
-                        onStart = { viewModel.startOpname(userId) }
-                    )
-                } else {
-                    OpnameExecutionContent(
-                        uiState = uiState,
-                        listState = listState,
-                        viewModel = viewModel,
-                        userId = userId
-                    )
-                }
+            )
+        },
+        containerColor = backColor
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            if (uiState.opnameDetail == null) {
+                StartOpnameSection(
+                    departments = uiState.departments,
+                    selectedDepartment = uiState.selectedDepartment,
+                    isLoading = uiState.isLoading,
+                    onSelect = { viewModel.selectDepartment(it) },
+                    onStart = { viewModel.startOpname(userId) }
+                )
+            } else {
+                OpnameExecutionContent(
+                    uiState = uiState,
+                    listState = listState,
+                    viewModel = viewModel,
+                    userId = userId
+                )
             }
+        }
 
-            if (uiState.isLoading && uiState.opnameDetail == null) {
-                Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.05f)), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(modifier = Modifier.size(48.dp), color = primaryColor)
-                }
+        if (uiState.isLoading && uiState.opnameDetail == null) {
+            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.05f)), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(modifier = Modifier.size(48.dp), color = primaryColor)
             }
         }
     }
