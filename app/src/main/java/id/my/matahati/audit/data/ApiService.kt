@@ -145,6 +145,11 @@ interface ApiService {
         @Body request: GenericIdRequest
     ): Response<AuditUpdateResponse>
 
+    @POST("api/audits/send-email")
+    suspend fun sendAuditEmail(
+        @Body request: SendEmailRequest
+    ): Response<GenericResponse>
+
     // Stock Management
     @GET("api/stock/categories")
     suspend fun getStockCategories(): Response<StockCategoryListResponse>
@@ -260,5 +265,10 @@ interface ApiService {
         @Path("id") id: Int,
         @retrofit2.http.Query("auditor_id") auditorId: Int
     ): Response<okhttp3.ResponseBody>
+
+    @POST("api/stock/opname/send-email")
+    suspend fun sendStockOpnameEmail(
+        @Body request: SendEmailRequest
+    ): Response<GenericResponse>
 
 }

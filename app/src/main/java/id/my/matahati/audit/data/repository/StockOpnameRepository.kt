@@ -248,6 +248,27 @@ class StockOpnameRepository(context: Context) {
         }
     }
 
+    suspend fun sendEmail(auditId: Int, recipient: String, message: String?): ApiResult<GenericResponse> {
+        return try {
+            val response = api.sendStockOpnameEmail(SendEmailRequest(auditId, recipient, message))
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) ApiResult.Success(body)
+                else ApiResult.Error("Gagal mengirim email")
+            } else {
+                ApiResult.Error(ApiErrorParser.parseError(response.errorBody()))
+            }
+        } catch (e: IOException) {
+            ApiResult.Error("Kesalahan Koneksi: ${e.message}")
+        } catch (e: Exception) {
+            val msg = e.localizedMessage ?: "Terjadi kesalahan"
+            val finalMsg = if (msg.contains("exhausted", ignoreCase = true)) {
+                "Gagal mengirim, maksimal file 20 mb"
+            } else msg
+            ApiResult.Error(finalMsg)
+        }
+    }
+
     private fun invalidateDetailCache(auditId: Int) {
         cache.delete(CACHE_KEY_OPNAME_DETAIL_PREFIX + auditId)
     }

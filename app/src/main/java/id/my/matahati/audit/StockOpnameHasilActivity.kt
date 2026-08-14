@@ -200,6 +200,7 @@ fun StockOpnameHasilScreen(
         StockOpnameReportDetailDialog(
             detail = detail,
             userId = userId,
+            viewModel = viewModel,
             onDismiss = { viewModel.clearDetail() }
         )
     }
@@ -209,6 +210,13 @@ fun StockOpnameHasilScreen(
         LaunchedEffect(msg) {
             Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
             viewModel.clearError()
+        }
+    }
+
+    uiState.emailSuccessMessage?.let { msg ->
+        LaunchedEffect(msg) {
+            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+            viewModel.clearEmailSuccess()
         }
     }
 }
@@ -328,11 +336,31 @@ fun StockDatePickerField(
 fun StockOpnameReportDetailDialog(
     detail: StockOpnameDetailData,
     userId: Int,
+    viewModel: StockOpnameHasilViewModel = viewModel(),
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
     val header = detail.header
     val primaryColor = Color(0xFFB63352)
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showEmailDialog by remember { mutableStateOf(false) }
+
+    if (showEmailDialog) {
+        SendEmailDialog(
+            isLoading = uiState.isEmailLoading,
+            onDismiss = { showEmailDialog = false },
+            onSend = { email ->
+                viewModel.sendEmail(header.id, email, null)
+            }
+        )
+    }
+
+    // Auto close email dialog on success
+    LaunchedEffect(uiState.emailSuccessMessage) {
+        if (uiState.emailSuccessMessage != null) {
+            showEmailDialog = false
+        }
+    }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Scaffold(
@@ -341,6 +369,9 @@ fun StockOpnameReportDetailDialog(
                     title = { Text(header.documentId, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
                     navigationIcon = { IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, null) } },
                     actions = {
+                        IconButton(onClick = { showEmailDialog = true }) {
+                            Icon(Icons.Default.Email, contentDescription = "Send Email")
+                        }
                         IconButton(onClick = {
                             val url = "https://audit-api.matahaticafe.com/api/stock/opname/${header.id}/export-pdf?auditor_id=${userId}"
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))

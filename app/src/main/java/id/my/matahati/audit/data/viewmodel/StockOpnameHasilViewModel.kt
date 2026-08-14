@@ -16,13 +16,15 @@ import java.util.*
 
 data class StockOpnameHasilUiState(
     val isLoading: Boolean = false,
+    val isEmailLoading: Boolean = false,
     val departments: List<DepartmentData> = emptyList(),
     val selectedDepartment: DepartmentData? = null,
     val dateFrom: String = "",
     val dateTo: String = "",
     val opnames: List<StockOpnameHistoryItem> = emptyList(),
     val selectedOpnameDetail: StockOpnameDetailData? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val emailSuccessMessage: String? = null
 )
 
 class StockOpnameHasilViewModel(application: Application) : AndroidViewModel(application) {
@@ -41,12 +43,20 @@ class StockOpnameHasilViewModel(application: Application) : AndroidViewModel(app
         val startOfYear = sdf.format(calendar.time)
 
         _uiState.update { it.copy(dateFrom = startOfYear, dateTo = today) }
+
+        // Instant load departments from cache
+        departmentRepository.getCachedDepartments()?.data?.let { depts ->
+            _uiState.update { it.copy(departments = depts) }
+        }
+
         fetchDepartments()
     }
 
     private fun fetchDepartments() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            if (_uiState.value.departments.isEmpty()) {
+                _uiState.update { it.copy(isLoading = true) }
+            }
             departmentRepository.getDepartments().collect { result ->
                 when (result) {
                     is ApiResult.Success -> {
@@ -121,5 +131,23 @@ class StockOpnameHasilViewModel(application: Application) : AndroidViewModel(app
 
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
+    }
+
+    fun sendEmail(auditId: Int, recipient: String, message: String?) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isEmailLoading = true) }
+            when (val result = opnameRepository.sendEmail(auditId, recipient, message)) {
+                is ApiResult.Success -> {
+                    _uiState.update { it.copy(isEmailLoading = false, emailSuccessMessage = result.data.message) }
+                }
+                is ApiResult.Error -> {
+                    _uiState.update { it.copy(isEmailLoading = false, errorMessage = result.message) }
+                }
+            }
+        }
+    }
+
+    fun clearEmailSuccess() {
+        _uiState.update { it.copy(emailSuccessMessage = null) }
     }
 }
