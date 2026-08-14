@@ -95,7 +95,6 @@ class AuditPertanyaan : ComponentActivity() {
             matahati_AuditTheme {
                 AuditPertanyaanScreen(
                     onBack = {
-                        startActivity(Intent(this, AuditHome::class.java))
                         finish()
                     }
                 )

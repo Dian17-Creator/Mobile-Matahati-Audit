@@ -32,10 +32,12 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import id.my.matahati.audit.*
 import id.my.matahati.audit.R
 import id.my.matahati.audit.data.RecentActivityData
 import id.my.matahati.audit.data.viewmodel.HomeViewModel
+import id.my.matahati.audit.navigation.Screen
 
 data class HomeMenu(
     val title: String,
@@ -45,6 +47,7 @@ data class HomeMenu(
 @Composable
 fun AuditHomeScreen(
     username: String,
+    navController: NavHostController,
     viewModel: HomeViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -89,20 +92,24 @@ fun AuditHomeScreen(
         )
 
         MainMenuSection(menus = menus) { menuTitle ->
-            when (menuTitle) {
-                "Kategori &\nPertanyaan" -> context.startActivity(Intent(context, AuditPertanyaan::class.java))
-                "Pemetaan\nDepartemen" -> context.startActivity(Intent(context, AuditDepartemen::class.java))
-                "Audit" -> context.startActivity(Intent(context, AuditProses::class.java))
-                "Hasil Audit" -> context.startActivity(Intent(context, AuditHasil::class.java))
+            if (navController.currentDestination?.route == Screen.Home.route) {
+                when (menuTitle) {
+                    "Kategori &\nPertanyaan" -> context.startActivity(Intent(context, AuditPertanyaan::class.java))
+                    "Pemetaan\nDepartemen" -> context.startActivity(Intent(context, AuditDepartemen::class.java))
+                    "Audit" -> context.startActivity(Intent(context, AuditProses::class.java))
+                    "Hasil Audit" -> context.startActivity(Intent(context, AuditHasil::class.java))
+                }
             }
         }
 
         RecentActivitySection(activities = uiState.recentActivities) { activityId ->
-            context.startActivity(
-                Intent(context, AuditProses::class.java).apply {
-                    putExtra("audit_id", activityId)
-                }
-            )
+            if (navController.currentDestination?.route == Screen.Home.route) {
+                context.startActivity(
+                    Intent(context, AuditProses::class.java).apply {
+                        putExtra("audit_id", activityId)
+                    }
+                )
+            }
         }
         
         Spacer(modifier = Modifier.height(12.dp))

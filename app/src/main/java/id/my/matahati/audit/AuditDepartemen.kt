@@ -44,7 +44,6 @@ class AuditDepartemen : ComponentActivity() {
             matahati_AuditTheme {
                 AuditDepartemenScreen(
                     onBack = {
-                        startActivity(Intent(this, AuditHome::class.java))
                         finish()
                     }
                 )

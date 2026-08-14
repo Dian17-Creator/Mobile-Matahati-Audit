@@ -34,10 +34,13 @@ fun MainNavigation(
         modifier = modifier
     ) {
         composable(Screen.Home.route) {
-            AuditHomeScreen(username = username)
+            AuditHomeScreen(
+                username = username,
+                navController = navController
+            )
         }
         composable(Screen.Stock.route) {
-            StockScreen()
+            StockScreen(navController = navController)
         }
         composable(Screen.Profile.route) {
             ProfileScreen(onLogout = onLogout)

@@ -72,7 +72,6 @@ class AuditProses : ComponentActivity() {
                 AuditExecutionScreen(
                     auditId = auditId,
                     onBack = {
-                        startActivity(Intent(this, AuditHome::class.java))
                         finish()
                     }
                 )
