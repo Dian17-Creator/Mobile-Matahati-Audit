@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -110,12 +111,18 @@ fun StockOpnameHasilScreen(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.3f))
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    val brandColor = Color(0xFFB63352)
+                    Text(
+                        text = "Pilih Departemen & Periode",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = brandColor,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
                     // Department Selector
                     var expanded by remember { mutableStateOf(false) }
-                    val brandColor = Color(0xFFB63352)
                     ExposedDropdownMenuBox(
                         expanded = expanded,
                         onExpandedChange = { expanded = !expanded }
@@ -177,19 +184,71 @@ fun StockOpnameHasilScreen(
                         }
                     }
 
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        StockDatePickerField(
-                            label = "Dari Tanggal",
-                            value = uiState.dateFrom,
-                            modifier = Modifier.weight(1f),
-                            onDateSelected = { viewModel.updateDates(it, uiState.dateTo, userId) }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .border(1.dp, Color.LightGray.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                            .background(Color.White, RoundedCornerShape(12.dp)),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Date From
+                        Row(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clickable {
+                                    showDatePicker(context, uiState.dateFrom) { viewModel.updateDates(it, uiState.dateTo, userId) }
+                                },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = formatDateIndo(uiState.dateFrom),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.DarkGray
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = Icons.Default.CalendarToday,
+                                contentDescription = null,
+                                tint = primaryColor.copy(alpha = 0.6f),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+
+                        // Vertical Divider
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight(0.6f)
+                                .width(1.dp)
+                                .background(Color.LightGray.copy(alpha = 0.5f))
                         )
-                        StockDatePickerField(
-                            label = "Sampai Tanggal",
-                            value = uiState.dateTo,
-                            modifier = Modifier.weight(1f),
-                            onDateSelected = { viewModel.updateDates(uiState.dateFrom, it, userId) }
-                        )
+
+                        // Date To
+                        Row(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clickable {
+                                    showDatePicker(context, uiState.dateTo) { viewModel.updateDates(uiState.dateFrom, it, userId) }
+                                },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = formatDateIndo(uiState.dateTo),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.DarkGray
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = Icons.Default.CalendarToday,
+                                contentDescription = null,
+                                tint = primaryColor.copy(alpha = 0.6f),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -323,54 +382,6 @@ fun StockOpnameDocumentItem(
     }
 }
 
-@Composable
-fun StockDatePickerField(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-    onDateSelected: (String) -> Unit
-) {
-    val context = LocalContext.current
-    val calendar = Calendar.getInstance()
-    
-    if (value.isNotEmpty()) {
-        try {
-            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            sdf.parse(value)?.let { calendar.time = it }
-        } catch (_: Exception) {}
-    }
-
-    OutlinedTextField(
-        value = value,
-        onValueChange = {},
-        readOnly = true,
-        label = { Text(label) },
-        trailingIcon = { Icon(Icons.Default.CalendarToday, null, modifier = Modifier.size(18.dp)) },
-        modifier = modifier.clickable {
-            DatePickerDialog(
-                context,
-                { _, y, m, d ->
-                    val cal = Calendar.getInstance()
-                    cal.set(y, m, d)
-                    val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                    onDateSelected(sdf.format(cal.time))
-                },
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)
-            ).show()
-        },
-        enabled = false,
-        colors = OutlinedTextFieldDefaults.colors(
-            disabledTextColor = MaterialTheme.colorScheme.onSurface,
-            disabledBorderColor = MaterialTheme.colorScheme.outline,
-            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-        ),
-        shape = RoundedCornerShape(12.dp)
-    )
-}
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun StockOpnameReportDetailDialog(
@@ -431,7 +442,7 @@ fun StockOpnameReportDetailDialog(
             }
         ) { innerPadding ->
             LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(innerPadding).background(Color(0xFFF8F9FB)),
+                modifier = Modifier.fillMaxSize().padding(innerPadding).background(MaterialTheme.colorScheme.background),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -440,7 +451,7 @@ fun StockOpnameReportDetailDialog(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.3f))
                     ) {
                         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
@@ -466,7 +477,7 @@ fun StockOpnameReportDetailDialog(
                                 modifier = Modifier.weight(1f).height(140.dp),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.3f))
                             ) {
                                 Column(modifier = Modifier.fillMaxSize().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                                     Text("Auditor", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
@@ -480,7 +491,7 @@ fun StockOpnameReportDetailDialog(
                                 modifier = Modifier.weight(1.2f).height(140.dp),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.3f))
                             ) {
                                 AsyncImage(
                                     model = header.verificationPhoto,
@@ -495,7 +506,7 @@ fun StockOpnameReportDetailDialog(
                                 modifier = Modifier.weight(1f).height(140.dp),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.3f))
                             ) {
                                 Column(modifier = Modifier.fillMaxSize().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                                     Text("Auditee / PIC", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
@@ -526,7 +537,7 @@ fun ResultOpnameItemCard(item: StockOpnameItem, index: Int) {
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        border = BorderStroke(1.dp, Color(0xFFB63352).copy(alpha = 0.3f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
