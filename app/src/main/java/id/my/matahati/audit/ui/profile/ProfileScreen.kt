@@ -37,7 +37,7 @@ fun ProfileScreen(onLogout: () -> Unit) {
     val user = sessionManager.getUser()
     
     val primaryColor = Color(0xFFB63352)
-    val backgroundColor = Color(0xFFF8F9FB)
+    val backgroundColor = MaterialTheme.colorScheme.background
 
     Column(
         modifier = Modifier

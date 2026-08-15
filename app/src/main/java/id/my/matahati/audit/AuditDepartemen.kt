@@ -64,7 +64,7 @@ fun AuditDepartemenScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val primaryColor = Color(0xFFB63352)
-    val backColor = Color(0xFFF8F9FB)
+    val backColor = MaterialTheme.colorScheme.background
 
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let {

@@ -45,7 +45,7 @@ fun StockScreen(
     viewModel: StockViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val backgroundColor = Color(0xFFF8F9FB)
+    val backgroundColor = MaterialTheme.colorScheme.background
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current

@@ -76,7 +76,7 @@ fun StockCategoryScreen(
     }
 
     val primaryColor = Color(0xFFB63352)
-    val backColor = Color(0xFFF8F9FB)
+    val backColor = MaterialTheme.colorScheme.background
 
     val isAnyDialogOpen = uiState.isAddDialogOpen || uiState.isEditDialogOpen || uiState.isDeleteDialogOpen
 
@@ -165,7 +165,7 @@ fun StockCategoryScreen(
                                 onDelete = { viewModel.openDeleteDialog(category) }
                             )
                         }
-                        item { Spacer(modifier = Modifier.height(80.dp)) }
+                        item { Spacer(modifier = Modifier.height(35.dp)) }
                     }
                 }
 
