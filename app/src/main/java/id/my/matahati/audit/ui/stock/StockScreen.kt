@@ -12,9 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -175,6 +173,9 @@ fun StockScreen(
 
 @Composable
 fun RecentActivitySection(activities: List<RecentActivityData>, onActivityClick: (Int) -> Unit) {
+    var isExpanded by remember { mutableStateOf(false) }
+    val displayActivities = if (isExpanded) activities else activities.take(3)
+
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -186,18 +187,20 @@ fun RecentActivitySection(activities: List<RecentActivityData>, onActivityClick:
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = Color.Black
             )
-            Text(
-                text = "Lihat Semua",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFFB63352),
-                modifier = Modifier.clickable { }
-            )
+            if (activities.size > 3) {
+                Text(
+                    text = if (isExpanded) "Sembunyikan" else "Lihat Semua",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFFB63352),
+                    modifier = Modifier.clickable { isExpanded = !isExpanded }
+                )
+            }
         }
         
         if (activities.isEmpty()) {
             EmptyRecentActivity()
         } else {
-            activities.forEach { activity ->
+            displayActivities.forEach { activity ->
                 ActivityItem(
                     title = activity.title, 
                     subtitle = activity.subtitle, 
