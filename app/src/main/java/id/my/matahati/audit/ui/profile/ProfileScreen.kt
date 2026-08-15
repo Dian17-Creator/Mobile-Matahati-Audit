@@ -1,5 +1,6 @@
 package id.my.matahati.audit.ui.profile
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -85,7 +86,8 @@ fun ProfileScreen(onLogout: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.2f))
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),

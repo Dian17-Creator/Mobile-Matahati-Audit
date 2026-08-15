@@ -1,6 +1,7 @@
 package id.my.matahati.audit.ui.stock
 
 import android.content.Intent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -219,6 +220,7 @@ fun EmptyRecentActivity() {
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFFB63352).copy(alpha = 0.15f))
     ) {
         Column(
             modifier = Modifier
@@ -259,7 +261,8 @@ fun ActivityItem(title: String, subtitle: String, status: String, statusColor: C
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        border = BorderStroke(1.dp, statusColor.copy(alpha = 0.2f))
     ) {
         Row(
             modifier = Modifier
@@ -320,7 +323,8 @@ fun StockStatCard(
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = containerColor)
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        border = BorderStroke(1.dp, Color(0xFFB63352).copy(alpha = 0.15f))
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -361,7 +365,8 @@ fun StockMenuCard(
             .clickable { onClick() },
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.2f))
     ) {
         Column(
             modifier = Modifier

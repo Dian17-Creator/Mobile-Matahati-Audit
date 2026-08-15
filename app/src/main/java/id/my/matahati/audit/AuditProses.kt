@@ -16,6 +16,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -346,10 +347,12 @@ fun AuditExecutionContent(
                 .blur(if (isAnyDialogOpen || selectedPhoto != null || showSubmitDialog) 16.dp else 0.dp)
         ) {
             // Audit Header
-            ElevatedCard(
+            Card(
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.elevatedCardColors(containerColor = Color.White)
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                border = BorderStroke(1.dp, Color(0xFFB63352).copy(alpha = 0.2f))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -478,7 +481,7 @@ fun StatusChip(status: String, isSolid: Boolean = false) {
     Surface(
         color = if (isSolid) color else color.copy(alpha = 0.1f),
         shape = RoundedCornerShape(8.dp),
-        border = if (isSolid) null else androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.5f))
+        border = if (isSolid) null else BorderStroke(1.dp, color.copy(alpha = 0.5f))
     ) {
         Text(
             text = status,
@@ -618,7 +621,7 @@ fun QuestionExecutionCard(
             containerColor = if (isHighlighted) Color(0xFFFFF9C4) else Color.White
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        border = BorderStroke(1.dp, Color(0xFFB63352).copy(alpha = 0.2f))
     ) {
         Row(
             modifier = Modifier
@@ -1037,7 +1040,7 @@ fun SubmitAuditDialog(
                             .clickable { showSourceDialog = true },
                         shape = RoundedCornerShape(16.dp),
                         color = brandColor.copy(alpha = 0.05f),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, brandColor.copy(alpha = 0.2f))
+                        border = BorderStroke(1.dp, brandColor.copy(alpha = 0.2f))
                     ) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -1067,7 +1070,7 @@ fun SubmitAuditDialog(
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f).height(52.dp),
                         shape = RoundedCornerShape(12.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray)
+                        border = BorderStroke(1.dp, Color.LightGray)
                     ) {
                         Text("Batal", color = Color.Gray)
                     }
