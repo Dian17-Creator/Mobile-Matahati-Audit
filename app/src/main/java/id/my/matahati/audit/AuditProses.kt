@@ -56,6 +56,7 @@ import coil.compose.AsyncImage
 import id.my.matahati.audit.data.*
 import id.my.matahati.audit.data.viewmodel.AuditExecutionViewModel
 import id.my.matahati.audit.ui.theme.matahati_AuditTheme
+import id.my.matahati.audit.component.verticalScrollbar
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
@@ -211,6 +212,7 @@ fun StartAuditSection(
     onStart: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val brandColor = Color(0xFFB63352)
 
     Column(
         modifier = Modifier
@@ -248,23 +250,55 @@ fun StartAuditSection(
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Departemen") },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.auditdept),
+                            contentDescription = null,
+                            tint = brandColor,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     modifier = Modifier.fillMaxWidth().menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = brandColor,
+                        focusedLabelColor = brandColor,
+                        unfocusedLabelColor = Color.Gray,
+                        unfocusedBorderColor = Color.LightGray,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
+                    )
                 )
 
                 ExposedDropdownMenu(
                     expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier.background(Color.White)
                 ) {
-                    departments.forEach { department ->
-                        DropdownMenuItem(
-                            text = { Text(department.name) },
-                            onClick = {
-                                onSelect(department)
-                                expanded = false
-                            }
-                        )
+                    val scrollState = rememberScrollState()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 250.dp)
+                            .verticalScrollbar(scrollState)
+                            .verticalScroll(scrollState)
+                    ) {
+                        departments.forEach { department ->
+                            DropdownMenuItem(
+                                text = { 
+                                    Text(
+                                        text = department.name,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        modifier = Modifier.padding(vertical = 4.dp)
+                                    )
+                                },
+                                onClick = {
+                                    onSelect(department)
+                                    expanded = false
+                                }
+                            )
+                        }
                     }
                 }
             }
