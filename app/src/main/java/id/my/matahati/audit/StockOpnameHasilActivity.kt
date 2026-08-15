@@ -75,7 +75,7 @@ fun StockOpnameHasilScreen(
     val userId = remember { sessionManager.getUser()?.nid ?: -1 }
     
     val primaryColor = Color(0xFFB63352)
-    val backColor = Color(0xFFF8F9FB)
+    val backColor = MaterialTheme.colorScheme.background
 
     LaunchedEffect(Unit) {
         viewModel.fetchOpnames(userId)

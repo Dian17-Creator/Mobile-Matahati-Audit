@@ -76,7 +76,7 @@ fun AuditHasilScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val primaryColor = Color(0xFFB63352)
-    val backColor = Color(0xFFF8F9FB)
+    val backColor = MaterialTheme.colorScheme.background
 
     LaunchedEffect(Unit) {
         viewModel.fetchAudits()

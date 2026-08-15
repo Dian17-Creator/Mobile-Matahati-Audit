@@ -70,7 +70,7 @@ fun AuditDetailPertanyaanScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val primaryColor = Color(0xFFB63352)
-    val backColor = Color(0xFFFFF5F5)
+    val backColor = MaterialTheme.colorScheme.background
 
     val isAnyDialogOpen = uiState.isAddDialogOpen || uiState.isEditDialogOpen || uiState.isDeleteDialogOpen
 
