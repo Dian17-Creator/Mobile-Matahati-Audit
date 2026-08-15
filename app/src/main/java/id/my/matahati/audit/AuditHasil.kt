@@ -10,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -111,12 +112,18 @@ fun AuditHasilScreen(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.3f))
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    val brandColor = Color(0xFFB63352)
+                    Text(
+                        text = "Pilih Departemen & Periode",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = brandColor,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
                     // Department Selector
                     var expanded by remember { mutableStateOf(false) }
-                    val brandColor = Color(0xFFB63352)
                     ExposedDropdownMenuBox(
                         expanded = expanded,
                         onExpandedChange = { expanded = !expanded }
@@ -178,19 +185,71 @@ fun AuditHasilScreen(
                         }
                     }
 
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        DatePickerField(
-                            label = "Dari Tanggal",
-                            value = uiState.dateFrom,
-                            modifier = Modifier.weight(1f),
-                            onDateSelected = { viewModel.updateDates(it, uiState.dateTo) }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .border(1.dp, Color.LightGray.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                            .background(Color.White, RoundedCornerShape(12.dp)),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Date From
+                        Row(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clickable {
+                                    showDatePicker(context, uiState.dateFrom) { viewModel.updateDates(it, uiState.dateTo) }
+                                },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = formatDateIndo(uiState.dateFrom),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.DarkGray
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = Icons.Default.CalendarToday,
+                                contentDescription = null,
+                                tint = primaryColor.copy(alpha = 0.6f),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+
+                        // Vertical Divider
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight(0.6f)
+                                .width(1.dp)
+                                .background(Color.LightGray.copy(alpha = 0.5f))
                         )
-                        DatePickerField(
-                            label = "Sampai Tanggal",
-                            value = uiState.dateTo,
-                            modifier = Modifier.weight(1f),
-                            onDateSelected = { viewModel.updateDates(uiState.dateFrom, it) }
-                        )
+
+                        // Date To
+                        Row(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clickable {
+                                    showDatePicker(context, uiState.dateTo) { viewModel.updateDates(uiState.dateFrom, it) }
+                                },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = formatDateIndo(uiState.dateTo),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.DarkGray
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = Icons.Default.CalendarToday,
+                                contentDescription = null,
+                                tint = primaryColor.copy(alpha = 0.6f),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -302,7 +361,7 @@ fun AuditDocumentItem(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        border = BorderStroke(1.dp, Color(0xFFB63352).copy(alpha = 0.2f))
     ) {
         Row(
             modifier = Modifier
@@ -376,53 +435,43 @@ fun AuditDocumentItem(
     }
 }
 
-@Composable
-fun DatePickerField(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
+fun formatDateIndo(dateStr: String): String {
+    if (dateStr.isEmpty()) return "-"
+    return try {
+        val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val outputFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+        val date = inputFormat.parse(dateStr)
+        if (date != null) outputFormat.format(date) else dateStr
+    } catch (e: Exception) {
+        dateStr
+    }
+}
+
+fun showDatePicker(
+    context: android.content.Context,
+    currentValue: String,
     onDateSelected: (String) -> Unit
 ) {
-    val context = LocalContext.current
     val calendar = Calendar.getInstance()
-    
-    // Parse current value to set calendar
-    if (value.isNotEmpty()) {
+    if (currentValue.isNotEmpty()) {
         try {
             val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            sdf.parse(value)?.let { calendar.time = it }
+            sdf.parse(currentValue)?.let { calendar.time = it }
         } catch (_: Exception) {}
     }
 
-    OutlinedTextField(
-        value = value,
-        onValueChange = {},
-        readOnly = true,
-        label = { Text(label) },
-        trailingIcon = { Icon(Icons.Default.CalendarToday, null, modifier = Modifier.size(18.dp)) },
-        modifier = modifier.clickable {
-            DatePickerDialog(
-                context,
-                { _, y, m, d ->
-                    val cal = Calendar.getInstance()
-                    cal.set(y, m, d)
-                    val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                    onDateSelected(sdf.format(cal.time))
-                },
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)
-            ).show()
+    DatePickerDialog(
+        context,
+        { _, y, m, d ->
+            val cal = Calendar.getInstance()
+            cal.set(y, m, d)
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            onDateSelected(sdf.format(cal.time))
         },
-        enabled = false, // Disable typing, only clickable via modifier
-        colors = OutlinedTextFieldDefaults.colors(
-            disabledTextColor = MaterialTheme.colorScheme.onSurface,
-            disabledBorderColor = MaterialTheme.colorScheme.outline,
-            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-        ),
-        shape = RoundedCornerShape(12.dp)
-    )
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    ).show()
 }
 
 @Composable
@@ -551,7 +600,7 @@ fun AuditReportDetailDialog(
             }
         ) { innerPadding ->
             LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(innerPadding).background(Color(0xFFF8F9FB)),
+                modifier = Modifier.fillMaxSize().padding(innerPadding).background(MaterialTheme.colorScheme.background),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -561,7 +610,7 @@ fun AuditReportDetailDialog(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.3f))
                     ) {
                         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             Row(
@@ -621,7 +670,7 @@ fun AuditReportDetailDialog(
                                 modifier = Modifier.weight(1f).height(140.dp),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.3f))
                             ) {
                                 Column(modifier = Modifier.fillMaxSize().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                                     Text("Auditor", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
@@ -633,12 +682,12 @@ fun AuditReportDetailDialog(
                                 modifier = Modifier.weight(1.2f).height(140.dp),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.3f))
                             ) {
                                 AsyncImage(
                                     model = audit.verificationPhoto,
                                     contentDescription = "Verification",
-                                    modifier = Modifier.fillMaxSize().border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
+                                    modifier = Modifier.fillMaxSize().border(1.dp, primaryColor.copy(alpha = 0.3f), RoundedCornerShape(12.dp)),
                                     contentScale = ContentScale.Crop
                                 )
                             }
@@ -646,7 +695,7 @@ fun AuditReportDetailDialog(
                                 modifier = Modifier.weight(1f).height(140.dp),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                border = BorderStroke(1.dp, primaryColor.copy(alpha = 0.3f))
                             ) {
                                 Column(modifier = Modifier.fillMaxSize().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                                     Text("Auditee / PIC", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
@@ -712,7 +761,7 @@ fun ResultQuestionCard(question: AuditQuestionDetail, index: Int) {
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        border = BorderStroke(1.dp, Color(0xFFB63352).copy(alpha = 0.3f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
@@ -738,7 +787,7 @@ fun ResultQuestionCard(question: AuditQuestionDetail, index: Int) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Color(0xFFF8F9FB), RoundedCornerShape(8.dp))
-                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                        .border(1.dp, Color(0xFFB63352).copy(alpha = 0.2f), RoundedCornerShape(8.dp))
                         .padding(10.dp)
                 ) {
                     Icon(Icons.Default.Description, null, modifier = Modifier.size(14.dp), tint = Color.Gray)
