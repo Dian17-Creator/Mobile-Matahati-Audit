@@ -14,8 +14,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -28,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -40,6 +43,7 @@ import coil.compose.AsyncImage
 import id.my.matahati.audit.data.*
 import id.my.matahati.audit.data.viewmodel.StockOpnameHasilViewModel
 import id.my.matahati.audit.ui.theme.matahati_AuditTheme
+import id.my.matahati.audit.component.verticalScrollbar
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -111,6 +115,7 @@ fun StockOpnameHasilScreen(
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     // Department Selector
                     var expanded by remember { mutableStateOf(false) }
+                    val brandColor = Color(0xFFB63352)
                     ExposedDropdownMenuBox(
                         expanded = expanded,
                         onExpandedChange = { expanded = !expanded }
@@ -120,19 +125,54 @@ fun StockOpnameHasilScreen(
                             onValueChange = {},
                             readOnly = true,
                             label = { Text("Departemen") },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.auditdept),
+                                    contentDescription = null,
+                                    tint = brandColor,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                             modifier = Modifier.fillMaxWidth().menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = brandColor,
+                                focusedLabelColor = brandColor,
+                                unfocusedLabelColor = Color.Gray,
+                                unfocusedBorderColor = Color.LightGray,
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White
+                            )
                         )
-                        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                            uiState.departments.forEach { dept ->
-                                DropdownMenuItem(
-                                    text = { Text(dept.name) },
-                                    onClick = {
-                                        viewModel.selectDepartment(dept, userId)
-                                        expanded = false
-                                    }
-                                )
+                        ExposedDropdownMenu(
+                            expanded = expanded, 
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier.background(Color.White)
+                        ) {
+                            val scrollState = rememberScrollState()
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 250.dp)
+                                    .verticalScrollbar(scrollState)
+                                    .verticalScroll(scrollState)
+                            ) {
+                                uiState.departments.forEach { dept ->
+                                    DropdownMenuItem(
+                                        text = { 
+                                            Text(
+                                                text = dept.name,
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                modifier = Modifier.padding(vertical = 4.dp)
+                                            )
+                                        },
+                                        onClick = {
+                                            viewModel.selectDepartment(dept, userId)
+                                            expanded = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
