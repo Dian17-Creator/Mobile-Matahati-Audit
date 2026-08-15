@@ -332,7 +332,7 @@ fun StockOpnameDocumentItem(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        border = BorderStroke(1.dp, Color(0xFFB63352).copy(alpha = 0.2f))
     ) {
         Row(
             modifier = Modifier
@@ -496,7 +496,7 @@ fun StockOpnameReportDetailDialog(
                                 AsyncImage(
                                     model = header.verificationPhoto,
                                     contentDescription = "Verification",
-                                    modifier = Modifier.fillMaxSize().border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
+                                    modifier = Modifier.fillMaxSize().border(1.dp, primaryColor.copy(alpha = 0.3f), RoundedCornerShape(12.dp)),
                                     contentScale = ContentScale.Crop
                                 )
                             }
@@ -565,14 +565,14 @@ fun ResultOpnameItemCard(item: StockOpnameItem, index: Int) {
 
             if (resp?.remark?.isNotBlank() == true) {
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(text = resp.remark, style = MaterialTheme.typography.bodySmall, color = Color.DarkGray, modifier = Modifier.fillMaxWidth().background(Color(0xFFF8F9FB), RoundedCornerShape(8.dp)).padding(8.dp))
+                Text(text = resp.remark, style = MaterialTheme.typography.bodySmall, color = Color.DarkGray, modifier = Modifier.fillMaxWidth().background(Color(0xFFF8F9FB), RoundedCornerShape(8.dp)).border(1.dp, Color(0xFFB63352).copy(alpha = 0.2f), RoundedCornerShape(8.dp)).padding(8.dp))
             }
 
             if (item.photos.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     item.photos.forEach { photo ->
-                        AsyncImage(model = photo.photoPath, contentDescription = null, modifier = Modifier.size(56.dp).clip(RoundedCornerShape(8.dp)).border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop)
+                        AsyncImage(model = photo.photoPath, contentDescription = null, modifier = Modifier.size(56.dp).clip(RoundedCornerShape(8.dp)).border(1.dp, Color(0xFFB63352).copy(alpha = 0.2f), RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop)
                     }
                 }
             }

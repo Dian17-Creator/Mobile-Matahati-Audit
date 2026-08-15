@@ -20,6 +20,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -340,10 +341,12 @@ fun OpnameExecutionContent(
                 .blur(if (isAnyDialogOpen || selectedPhoto != null || showSubmitDialog) 16.dp else 0.dp)
         ) {
             // Header Card
-            ElevatedCard(
+            Card(
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.elevatedCardColors(containerColor = Color.White)
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                border = BorderStroke(1.dp, Color(0xFFB63352).copy(alpha = 0.2f))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -569,7 +572,7 @@ fun StockOpnameItemCard(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = if (isHighlighted) Color(0xFFFFF9C4) else Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        border = BorderStroke(1.dp, Color(0xFFB63352).copy(alpha = 0.2f))
     ) {
         Row(
             modifier = Modifier.padding(16.dp).fillMaxWidth(),
@@ -760,7 +763,7 @@ fun SubmitOpnameDialog(
                         }
                     }
                 } else {
-                    Surface(modifier = Modifier.fillMaxWidth().height(120.dp).clickable { showSourceDialog = true }, shape = RoundedCornerShape(16.dp), color = Color(0xFFB63352).copy(alpha = 0.05f), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFB63352).copy(alpha = 0.2f))) {
+                    Surface(modifier = Modifier.fillMaxWidth().height(120.dp).clickable { showSourceDialog = true }, shape = RoundedCornerShape(16.dp), color = Color(0xFFB63352).copy(alpha = 0.05f), border = BorderStroke(1.dp, Color(0xFFB63352).copy(alpha = 0.2f))) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                             Icon(Icons.Default.AddAPhoto, null, tint = Color(0xFFB63352), modifier = Modifier.size(32.dp))
                             Spacer(modifier = Modifier.height(8.dp))

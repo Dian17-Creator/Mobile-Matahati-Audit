@@ -806,7 +806,7 @@ fun ResultQuestionCard(question: AuditQuestionDetail, index: Int) {
                             modifier = Modifier
                                 .size(56.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                                .border(1.dp, Color(0xFFB63352).copy(alpha = 0.2f), RoundedCornerShape(8.dp))
                                 .background(Color.LightGray),
                             contentScale = ContentScale.Crop
                         )
