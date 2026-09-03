@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import id.my.matahati.audit.data.ApiResult
 import id.my.matahati.audit.data.RecentActivityData
 import id.my.matahati.audit.data.repository.DashboardRepository
+import id.my.matahati.audit.data.repository.AuditExecutionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,6 +25,7 @@ data class HomeUiState(
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: DashboardRepository = DashboardRepository(application)
+    private val auditRepository: AuditExecutionRepository = AuditExecutionRepository(application)
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -74,6 +76,36 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                                 totalAudit = if (it.totalAudit == "--") "-" else it.totalAudit
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    fun fetchAllAudits() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            auditRepository.getAudits().collect { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        val allAudits = result.data.data?.map { item ->
+                            RecentActivityData(
+                                id = item.id,
+                                title = item.departmentName ?: "Audit",
+                                subtitle = "${item.documentId ?: ""} • ${item.createdAt ?: ""}",
+                                status = item.status ?: "Unknown"
+                            )
+                        } ?: emptyList()
+                        
+                        _uiState.update { 
+                            it.copy(
+                                isLoading = false,
+                                recentActivities = allAudits
+                            )
+                        }
+                    }
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, error = result.message) }
                     }
                 }
             }

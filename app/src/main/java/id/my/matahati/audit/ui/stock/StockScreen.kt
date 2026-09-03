@@ -158,7 +158,10 @@ fun StockScreen(
             )
         }
 
-        RecentActivitySection(activities = uiState.recentActivities) { activityId ->
+        RecentActivitySection(
+            activities = uiState.recentActivities,
+            onExpand = { viewModel.fetchAllStockOpnames() }
+        ) { activityId ->
             if (navController.currentDestination?.route == Screen.Stock.route) {
                 context.startActivity(
                     Intent(context, id.my.matahati.audit.StockOpnameActivity::class.java).apply {
@@ -173,9 +176,24 @@ fun StockScreen(
 }
 
 @Composable
-fun RecentActivitySection(activities: List<RecentActivityData>, onActivityClick: (Int) -> Unit) {
+fun RecentActivitySection(
+    activities: List<RecentActivityData>,
+    onExpand: () -> Unit,
+    onActivityClick: (Int) -> Unit
+) {
     var isExpanded by remember { mutableStateOf(false) }
-    val displayActivities = if (isExpanded) activities else activities.take(3)
+    var currentPage by remember { mutableIntStateOf(0) }
+    val pageSize = 5
+    
+    val displayActivities = if (isExpanded) {
+        val start = currentPage * pageSize
+        val end = minOf(start + pageSize, activities.size)
+        if (start < activities.size) activities.subList(start, end) else emptyList()
+    } else {
+        activities.take(3)
+    }
+
+    val totalPages = (activities.size + pageSize - 1) / pageSize
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(
@@ -188,12 +206,16 @@ fun RecentActivitySection(activities: List<RecentActivityData>, onActivityClick:
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = Color.Black
             )
-            if (activities.size > 3) {
+            if (activities.size > 3 || isExpanded) {
                 Text(
                     text = if (isExpanded) "Sembunyikan" else "Lihat Semua",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFFB63352),
-                    modifier = Modifier.clickable { isExpanded = !isExpanded }
+                    modifier = Modifier.clickable { 
+                        if (!isExpanded) onExpand()
+                        isExpanded = !isExpanded
+                        currentPage = 0 // Reset page when toggling
+                    }
                 )
             }
         }
@@ -201,14 +223,55 @@ fun RecentActivitySection(activities: List<RecentActivityData>, onActivityClick:
         if (activities.isEmpty()) {
             EmptyRecentActivity()
         } else {
-            displayActivities.forEach { activity ->
-                ActivityItem(
-                    title = activity.title, 
-                    subtitle = activity.subtitle, 
-                    status = activity.status, 
-                    statusColor = if (activity.status == "Selesai" || activity.status == "Submitted") Color(0xFF4CAF50) else Color(0xFF2196F3),
-                    onClick = { onActivityClick(activity.id) }
-                )
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                displayActivities.forEach { activity ->
+                    ActivityItem(
+                        title = activity.title, 
+                        subtitle = activity.subtitle, 
+                        status = activity.status, 
+                        statusColor = if (activity.status == "Selesai" || activity.status == "Submitted") Color(0xFF4CAF50) else Color(0xFF2196F3),
+                        onClick = { onActivityClick(activity.id) }
+                    )
+                }
+            }
+
+            if (isExpanded && totalPages > 1) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(
+                        onClick = { if (currentPage > 0) currentPage-- },
+                        enabled = currentPage > 0,
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        border = BorderStroke(1.dp, if (currentPage > 0) Color(0xFFB63352) else Color.LightGray)
+                    ) {
+                        Icon(Icons.Default.ChevronLeft, contentDescription = null, modifier = Modifier.size(18.dp), tint = if (currentPage > 0) Color(0xFFB63352) else Color.LightGray)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Prev", color = if (currentPage > 0) Color(0xFFB63352) else Color.LightGray, style = MaterialTheme.typography.labelLarge)
+                    }
+
+                    Text(
+                        text = "Halaman ${currentPage + 1} dari $totalPages",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.Gray
+                    )
+
+                    OutlinedButton(
+                        onClick = { if (currentPage < totalPages - 1) currentPage++ },
+                        enabled = currentPage < totalPages - 1,
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        border = BorderStroke(1.dp, if (currentPage < totalPages - 1) Color(0xFFB63352) else Color.LightGray)
+                    ) {
+                        Text("Next", color = if (currentPage < totalPages - 1) Color(0xFFB63352) else Color.LightGray, style = MaterialTheme.typography.labelLarge)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(Icons.Default.ChevronRight, contentDescription = null, modifier = Modifier.size(18.dp), tint = if (currentPage < totalPages - 1) Color(0xFFB63352) else Color.LightGray)
+                    }
+                }
             }
         }
     }

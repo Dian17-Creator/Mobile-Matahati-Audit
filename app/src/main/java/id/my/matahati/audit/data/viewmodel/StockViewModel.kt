@@ -5,7 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import id.my.matahati.audit.data.*
 import id.my.matahati.audit.data.repository.DashboardRepository
-import id.my.matahati.audit.data.repository.StockRepository
+import id.my.matahati.audit.data.repository.StockOpnameRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,6 +24,8 @@ data class StockUiState(
 class StockViewModel(application: Application) : AndroidViewModel(application) {
 
     private val dashboardRepository: DashboardRepository = DashboardRepository(application)
+    private val stockOpnameRepository: StockOpnameRepository = StockOpnameRepository(application)
+    private val sessionManager: SessionManager = SessionManager(application)
 
     private val _uiState = MutableStateFlow(StockUiState())
     val uiState: StateFlow<StockUiState> = _uiState.asStateFlow()
@@ -61,6 +63,37 @@ class StockViewModel(application: Application) : AndroidViewModel(application) {
                                 totalBarang = data?.totalBarang?.toString() ?: "0",
                                 totalStokOpname = data?.totalStokOpname?.toString() ?: "0",
                                 recentActivities = data?.recentStockOpname ?: emptyList()
+                            )
+                        }
+                    }
+                    is ApiResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                    }
+                }
+            }
+        }
+    }
+
+    fun fetchAllStockOpnames() {
+        val user = sessionManager.getUser() ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            stockOpnameRepository.getStockOpnameHistories(user.nid).collect { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        val allStockOpnames = result.data.data?.items?.map { item ->
+                            RecentActivityData(
+                                id = item.id,
+                                title = item.departmentName ?: "Stok Opname",
+                                subtitle = "${item.documentId ?: ""} • ${item.auditDate ?: ""}",
+                                status = item.status ?: "Unknown"
+                            )
+                        } ?: emptyList()
+                        
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                recentActivities = allStockOpnames
                             )
                         }
                     }

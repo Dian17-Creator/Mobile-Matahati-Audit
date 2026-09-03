@@ -20,6 +20,8 @@ data class AuditExecutionUiState(
     val isSaving: Boolean = false,
     val isUploading: Boolean = false,
     val isSubmitting: Boolean = false,
+    val isEmailLoading: Boolean = false,
+    val emailSuccessMessage: String? = null,
     val departments: List<DepartmentData> = emptyList(),
     val selectedDepartment: DepartmentData? = null,
     val activeAudits: List<AuditHistoryItem> = emptyList(),
@@ -172,9 +174,10 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
             category.copy(questions = category.questions.map { question ->
                 if (question.id == questionId) {
                     val currentResp = question.response
+                    val isNa = score == "N/A"
                     question.copy(
-                        response = currentResp?.copy(score = score, remark = notes) 
-                            ?: AuditResponseDetail(id = 0, score = score, isNa = score == "N/A", remark = notes)
+                        response = currentResp?.copy(score = score, isNa = isNa, remark = notes) 
+                            ?: AuditResponseDetail(id = 0, score = score, isNa = isNa, remark = notes)
                     )
                 } else {
                     question
@@ -284,6 +287,24 @@ class AuditExecutionViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun clearMessages() {
-        _uiState.update { it.copy(errorMessage = null, successMessage = null) }
+        _uiState.update { it.copy(errorMessage = null, successMessage = null, emailSuccessMessage = null) }
+    }
+
+    fun sendEmail(auditId: Int, recipient: String, message: String?) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isEmailLoading = true) }
+            when (val result = executionRepository.sendEmail(auditId, recipient, message)) {
+                is ApiResult.Success -> {
+                    _uiState.update { it.copy(isEmailLoading = false, emailSuccessMessage = result.data.message) }
+                }
+                is ApiResult.Error -> {
+                    _uiState.update { it.copy(isEmailLoading = false, errorMessage = result.message) }
+                }
+            }
+        }
+    }
+
+    fun clearEmailSuccess() {
+        _uiState.update { it.copy(emailSuccessMessage = null) }
     }
 }

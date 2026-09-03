@@ -97,6 +97,7 @@ fun AuditExecutionScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
+    var showEmailDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.initialize(auditId)
@@ -116,6 +117,14 @@ fun AuditExecutionScreen(
         uiState.successMessage?.let {
             snackbarHostState.showSnackbar(it)
             viewModel.clearMessages()
+        }
+    }
+
+    LaunchedEffect(uiState.emailSuccessMessage) {
+        uiState.emailSuccessMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            showEmailDialog = false
+            viewModel.clearEmailSuccess()
         }
     }
 
@@ -162,6 +171,21 @@ fun AuditExecutionScreen(
                         Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
+                actions = {
+                    val audit = uiState.auditDetail?.audit
+                    if (audit?.status == "Submitted") {
+                        IconButton(onClick = { showEmailDialog = true }) {
+                            Icon(Icons.Default.Email, contentDescription = "Send Email")
+                        }
+                        IconButton(onClick = {
+                            val url = "https://audit-api.matahaticafe.com/api/audits/${audit.id}/export-pdf"
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            context.startActivity(intent)
+                        }) {
+                            Icon(Icons.Default.Print, contentDescription = "Download PDF")
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = primaryColor,
                     titleContentColor = Color.White,
@@ -192,6 +216,18 @@ fun AuditExecutionScreen(
                     viewModel = viewModel
                 )
             }
+        }
+
+        if (showEmailDialog) {
+            SendEmailDialog(
+                isLoading = uiState.isEmailLoading,
+                onDismiss = { showEmailDialog = false },
+                onSend = { email ->
+                    uiState.auditDetail?.audit?.id?.let { id ->
+                        viewModel.sendEmail(id, email, null)
+                    }
+                }
+            )
         }
 
         if (uiState.isLoading && uiState.auditDetail == null) {
@@ -670,15 +706,20 @@ fun QuestionExecutionCard(
                 ) {
                     val scores = listOf("N/A", "0", "0.5", "1", "1.5", "2")
                     scores.forEach { score ->
-                        // Normalize comparison for decimal strings (e.g. "1.0" should match "1")
-                        val isSelected = remember(currentResponse?.score, score) {
+                        // Normalize comparison for decimal strings (e.g. "1.0" should match "1") and handle isNa
+                        val isSelected = remember(currentResponse?.score, currentResponse?.isNa, score) {
                             val respScore = currentResponse?.score
-                            if (respScore == null || score == "N/A") {
-                                respScore == score
+                            val isNa = currentResponse?.isNa == true || respScore.equals("N/A", ignoreCase = true)
+                            if (score == "N/A") {
+                                isNa
+                            } else if (isNa || respScore.isNullOrEmpty()) {
+                                false
                             } else {
-                                try {
-                                    respScore.toDouble() == score.toDouble()
-                                } catch (e: Exception) {
+                                val respDouble = respScore.toDoubleOrNull()
+                                val targetDouble = score.toDoubleOrNull()
+                                if (respDouble != null && targetDouble != null) {
+                                    respDouble == targetDouble
+                                } else {
                                     respScore == score
                                 }
                             }
