@@ -768,7 +768,8 @@ fun ResultQuestionCard(question: AuditQuestionDetail, index: Int) {
                 Text(text = "$index.", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, modifier = Modifier.width(28.dp))
                 Text(text = question.question, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                 
-                val score = currentResponse?.score ?: "-"
+                val isNa = currentResponse?.isNa == true || currentResponse?.score.equals("N/A", ignoreCase = true)
+                val score = if (isNa) "N/A" else (currentResponse?.score ?: "-")
                 Surface(
                     color = getScoreColor(score).copy(alpha = 0.1f),
                     shape = RoundedCornerShape(6.dp),
@@ -818,7 +819,7 @@ fun ResultQuestionCard(question: AuditQuestionDetail, index: Int) {
 }
 
 fun getScoreColor(score: String): Color {
-    return when (score) {
+    return when (score.uppercase()) {
         "N/A" -> Color(0xFF9E9E9E)
         "0", "0.0" -> Color(0xFFF44336)
         "0.5" -> Color(0xFFFF9800)
